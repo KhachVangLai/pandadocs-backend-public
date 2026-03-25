@@ -65,6 +65,105 @@ The backend follows a standard layered Spring structure:
 
 For a deeper technical review, see [PROJECT_REPORT.md](./PROJECT_REPORT.md).
 
+## Database Overview
+
+```mermaid
+erDiagram
+    USERS {
+        bigint id PK
+        string username
+        string email
+        string status
+    }
+    ROLES {
+        int id PK
+        string name
+    }
+    CATEGORIES {
+        bigint id PK
+        string name
+    }
+    TEMPLATES {
+        bigint id PK
+        string title
+        double price
+        string status
+    }
+    ORDERS {
+        bigint id PK
+        double total_amount
+        string payment_status
+    }
+    ORDER_ITEMS {
+        bigint id PK
+        double price
+    }
+    LIBRARY {
+        bigint id PK
+        timestamp acquired_at
+    }
+    REVIEWS {
+        bigint id PK
+        int rating
+        text comment
+    }
+    COLLECTIONS {
+        bigint id PK
+        string name
+    }
+    SELLER_PROFILES {
+        bigint id PK
+        string business_name
+    }
+    SELLER_PAYOUTS {
+        bigint id PK
+        double agreed_price
+        string status
+    }
+    NOTIFICATIONS {
+        bigint id PK
+        string message
+        boolean is_read
+    }
+    SUGGESTIONS {
+        bigint id PK
+        string status
+        text message
+    }
+    CHAT_CONVERSATIONS {
+        bigint id PK
+        string session_id
+        int message_count
+    }
+    CHAT_QUOTA {
+        bigint id PK
+        int hourly_count
+        int daily_count
+    }
+
+    USERS }o--o{ ROLES : "has via user_roles"
+    USERS ||--o{ TEMPLATES : authors
+    CATEGORIES ||--o{ TEMPLATES : classifies
+    USERS ||--o{ ORDERS : places
+    ORDERS ||--|{ ORDER_ITEMS : contains
+    TEMPLATES ||--o{ ORDER_ITEMS : purchased_as
+    USERS ||--o{ LIBRARY : owns
+    TEMPLATES ||--o{ LIBRARY : acquired_in
+    USERS ||--o{ REVIEWS : writes
+    TEMPLATES ||--o{ REVIEWS : receives
+    USERS ||--o{ COLLECTIONS : creates
+    COLLECTIONS }o--o{ TEMPLATES : groups
+    USERS ||--o| SELLER_PROFILES : has
+    USERS ||--o{ SELLER_PAYOUTS : receives
+    TEMPLATES ||--o{ SELLER_PAYOUTS : generates
+    USERS ||--o{ NOTIFICATIONS : receives
+    USERS ||--o{ SUGGESTIONS : submits
+    USERS ||--o{ CHAT_CONVERSATIONS : starts
+    USERS ||--o| CHAT_QUOTA : has
+```
+
+This is a simplified conceptual ERD for understanding the marketplace domain. The public repo does not include a full checked-in migration history for the whole schema, so treat this as a domain map rather than exact DDL. See [database/README.md](./database/README.md) for the current migration note.
+
 ## Local Review / Best-Effort Startup
 
 1. Install Java 17, Maven, and PostgreSQL.
