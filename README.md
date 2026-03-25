@@ -22,6 +22,13 @@ This repository is a **public-safe snapshot** of a past university project. It i
 - It is intended to show backend engineering ability: Spring Boot architecture, REST API design, auth, payments, cloud storage, and AI-assisted product search.
 - Known limitations are intentionally preserved and documented rather than hidden.
 
+## Current Availability
+
+- The original Google Cloud project used during development has been retired and is no longer running.
+- There is no live public demo or active production endpoint attached to this repository.
+- The checked-in deployment files are kept as historical implementation evidence, not as proof of a currently operating environment.
+- This repo should be reviewed primarily as a backend codebase and system-design artifact.
+
 ## Tech Stack
 
 - Java 17
@@ -56,7 +63,7 @@ The backend follows a standard layered Spring structure:
 
 For a deeper technical review, see [PROJECT_REPORT.md](./PROJECT_REPORT.md).
 
-## Quick Start
+## Local Review / Best-Effort Startup
 
 1. Install Java 17, Maven, and PostgreSQL.
 2. Run the local bootstrap script:
@@ -68,7 +75,7 @@ For a deeper technical review, see [PROJECT_REPORT.md](./PROJECT_REPORT.md).
 3. Put your Firebase service-account JSON in the ignored `secrets/` folder or supply credentials through environment variables.
 4. Edit `src/main/resources/application-local.properties` with your local values.
 5. Review the full setup guide at [docs/setup.md](./docs/setup.md).
-6. Start the application with the local profile:
+6. Attempt to start the application with the local profile:
 
 ```bash
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
@@ -81,6 +88,8 @@ http://localhost:8080/swagger-ui.html
 ```
 
 If you do not want a local profile file, you can instead provide the same values through shell environment variables. [.env.example](./.env.example) is the reference list, not an auto-loaded file.
+
+Successful local startup is **not guaranteed** in this public snapshot. The original cloud project has been deleted, the full marketplace database bootstrap is not included, and some third-party integrations require recreating private infrastructure manually.
 
 ## Documentation
 
@@ -104,6 +113,7 @@ If you do not want a local profile file, you can instead provide the same values
 ## Limitations
 
 - This is a backend-only repo; the frontend is separate.
+- The original cloud deployment was deleted after the project period, so there is no live hosted instance.
 - Database bootstrap is not fully automated in this public snapshot.
 - Some legacy docs are preserved for context and may reflect historical implementation state.
 - Test coverage is limited and the repo is presented primarily for architecture/code review, not as a finished production deployment.
@@ -113,6 +123,7 @@ If you do not want a local profile file, you can instead provide the same values
 This repo should be treated as a **portfolio snapshot**:
 
 - stable enough to review
+- no longer backed by the original paid cloud environment
 - not guaranteed to receive ongoing feature development
 - intentionally public-safe rather than infrastructure-complete
 

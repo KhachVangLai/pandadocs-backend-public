@@ -8,11 +8,11 @@ PandaDocs is a backend-driven document template marketplace designed around a pr
 
 Về mặt ý tưởng, đây là một mini-project có phạm vi khá rộng so với nhiều đồ án môn học thông thường. Dự án không chỉ dừng ở CRUD cơ bản mà còn mô hình hóa tương đối đầy đủ các vai trò vận hành của một marketplace thực tế: người dùng cuối, người bán, quản trị viên, thanh toán, lưu trữ file, và trợ lý AI.
 
-From a repository perspective, this codebase represents the backend portion of the PandaDocs system rather than a complete full-stack application. The Java application uses Spring Boot 3.5.6 and Java 17 as defined in [pom.xml](./pom.xml), with a layered architecture across controllers, services, repositories, models, DTOs, security, and configuration packages. It also shows clear deployment intent through containerization and Google Cloud Run manifests in [dockerfile](./dockerfile) and [service-deploy.yaml](./service-deploy.yaml).
+From a repository perspective, this codebase represents the backend portion of the PandaDocs system rather than a complete full-stack application. The Java application uses Spring Boot 3.5.6 and Java 17 as defined in [pom.xml](./pom.xml), with a layered architecture across controllers, services, repositories, models, DTOs, security, and configuration packages. It also shows clear deployment intent through containerization and Google Cloud Run manifests in [dockerfile](./dockerfile) and [service-deploy.yaml](./service-deploy.yaml), although the original cloud project used during development has since been retired.
 
 Tuy nhiên, giá trị của dự án không chỉ nằm ở số lượng tính năng. Điểm đáng chú ý là cách dự án kết hợp nhiều thành phần kỹ thuật tương đối hiện đại: xác thực JWT và OAuth2, PostgreSQL qua JPA, Firebase Storage cho file và ảnh, PayOS cho thanh toán, SMTP cho email, Swagger cho tài liệu API, và Gemini cho AI chat. Điều này cho thấy dự án có định hướng mô phỏng một hệ thống backend gần với tình huống triển khai thật, thay vì chỉ là bài tập mô hình hóa đơn giản.
 
-At the same time, the repository is not yet production-grade. The implementation breadth is strong, but reproducibility, security hardening, and automated verification are still limited. This report therefore presents the project as a serious portfolio-quality backend effort while staying transparent about current risks, technical debt, and repository boundaries.
+At the same time, the repository is not yet production-grade. The implementation breadth is strong, but reproducibility, security hardening, and automated verification are still limited, and the original paid cloud environment is no longer available. This report therefore presents the project as a serious portfolio-quality backend effort while staying transparent about current risks, technical debt, and repository boundaries.
 
 Nói ngắn gọn, PandaDocs là một backend mini-project có tham vọng lớn, thể hiện tốt năng lực thiết kế hệ thống và tích hợp dịch vụ, nhưng vẫn còn khoảng cách đáng kể giữa mức “hoàn thành chức năng” và mức “sẵn sàng production”.
 
@@ -22,7 +22,7 @@ This repository is a backend-only public snapshot and does not contain a checked
 
 Điều này rất quan trọng khi mô tả dự án với giảng viên hoặc đưa vào portfolio: repo hiện tại là backend của hệ thống PandaDocs, không phải toàn bộ sản phẩm hoàn chỉnh từ frontend đến backend.
 
-Frontend behavior can still be inferred from integration-oriented documents such as [frontend-integration.md](./docs/ai-chat/frontend-integration.md) and from environment variables that reference a separate frontend host in [application.properties](./src/main/resources/application.properties) and [service-deploy.yaml](./service-deploy.yaml). The backend clearly expects a separate web client for OAuth redirects, payment return pages, and chat UI rendering.
+Frontend behavior can still be inferred from integration-oriented documents such as [frontend-integration.md](./docs/ai-chat/frontend-integration.md) and from environment variables that reference a separate frontend host in [application.properties](./src/main/resources/application.properties) and [service-deploy.yaml](./service-deploy.yaml). The backend clearly expects a separate web client for OAuth redirects, payment return pages, and chat UI rendering, but the historical deployment references should not be read as currently live infrastructure.
 
 Nói cách khác, nếu cần demo trải nghiệm người dùng hoàn chỉnh, phần frontend nhiều khả năng tồn tại ở repo khác hoặc mới chỉ được mô tả ở mức tài liệu tích hợp.
 
@@ -199,9 +199,9 @@ PandaDocs integrates several external services that materially increase the tech
 | SMTP / SendGrid-style mail | Verification and password reset email | [EmailService.java](./src/main/java/com/pandadocs/api/service/EmailService.java) |
 | Swagger / OpenAPI | API exploration and documentation | [pom.xml](./pom.xml), [WebSecurityConfig.java](./src/main/java/com/pandadocs/api/security/WebSecurityConfig.java) |
 | Docker | Containerized packaging | [dockerfile](./dockerfile) |
-| Google Cloud Run | Intended production deployment target | [service-deploy.yaml](./service-deploy.yaml) |
+| Google Cloud Run | Historical deployment target during development | [service-deploy.yaml](./service-deploy.yaml) |
 
-The deployment files show a clear cloud deployment intention. [dockerfile](./dockerfile) uses a multi-stage Maven build and a lightweight runtime image, while [service-deploy.yaml](./service-deploy.yaml) configures Cloud Run environment variables, secrets, resource limits, and a mounted Firebase credential volume. The deployment configuration also points to a separate frontend host through environment variables such as `OAUTH2_FRONTEND_REDIRECT_URL` and payment return URLs.
+The deployment files show a clear cloud deployment intention. [dockerfile](./dockerfile) uses a multi-stage Maven build and a lightweight runtime image, while [service-deploy.yaml](./service-deploy.yaml) configures Cloud Run environment variables, secrets, resource limits, and a mounted Firebase credential volume. The deployment configuration also points to a separate frontend host through environment variables such as `OAUTH2_FRONTEND_REDIRECT_URL` and payment return URLs. In this public snapshot, those files should be interpreted as historical deployment artifacts rather than instructions for reconnecting to a still-running project.
 
 Về mặt portfolio, phần triển khai là một điểm cộng mạnh. Dù chưa hoàn thiện hoàn toàn, việc có Docker và manifest Cloud Run giúp dự án trông gần với quy trình triển khai thật hơn nhiều so với các đồ án chỉ chạy local.
 
@@ -257,7 +257,7 @@ Về mặt học thuật và kỹ thuật, đây là hạn chế đáng kể. Ph
 
 ### 4. Local Verification Gap in Current Environment
 
-During inspection in the current environment, Java was available but the Maven wrapper could not be used successfully: `mvnw.cmd` failed before Maven startup. As a result, this report is grounded mainly in static repository inspection rather than a full successful local test run.
+During inspection in the current environment, Java was available but the Maven wrapper could not be used successfully: `mvnw.cmd` failed before Maven startup. In addition, the original cloud project and its paid infrastructure are no longer available. As a result, this report is grounded mainly in static repository inspection rather than a full successful local test run against the original environment.
 
 Điểm này không nhất thiết có nghĩa project không chạy được ở mọi máy, nhưng nó cho thấy quy trình local verification hiện chưa thực sự trơn tru và đáng tin cậy.
 
@@ -303,7 +303,7 @@ PandaDocs is a strong backend-centric mini-project with clear portfolio value. I
 
 Nếu đánh giá ở góc độ năng lực kỹ thuật, dự án thể hiện tốt khả năng thiết kế backend đa module, tích hợp dịch vụ bên ngoài, tổ chức code theo lớp, và mô hình hóa nghiệp vụ có nhiều vai trò. Đây là những điểm đủ tốt để đưa vào portfolio hoặc dùng làm nội dung trình bày với giảng viên.
 
-At the same time, the project is more convincing as an ambitious backend prototype than as a hardened production system. The biggest gaps are limited test coverage, partial documentation drift, incomplete migration reproducibility, and several security/configuration issues that should be addressed before public deployment or open-source publication.
+At the same time, the project is more convincing as an ambitious backend prototype than as a hardened production system. The biggest gaps are limited test coverage, partial documentation drift, incomplete migration reproducibility, several security/configuration issues, and the absence of the original cloud environment that once backed the project.
 
 Kết luận cân bằng nhất là: PandaDocs đã đạt mức rất tốt về độ rộng chức năng và ý tưởng triển khai backend, nhưng vẫn cần thêm kiểm thử, chuẩn hóa tài liệu, quản lý secrets, và hardening bảo mật để tiến gần hơn tới chất lượng production.
 

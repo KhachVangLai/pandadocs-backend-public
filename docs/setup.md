@@ -1,6 +1,6 @@
 # Local Setup Guide
 
-This guide explains how to review and run the public PandaDocs Backend snapshot locally.
+This guide explains how to review and attempt to run the public PandaDocs Backend snapshot locally.
 
 ## 1. Prerequisites
 
@@ -20,6 +20,7 @@ This repository is a **sanitized backend-only snapshot** of a past university pr
 - The frontend is separate and not included here.
 - Real credentials have been removed.
 - Some infrastructure and database setup details were part of the original private environment and are not fully reproduced here.
+- The original Google Cloud project used during development has been deleted, so old deployment URLs should be treated as historical context only.
 
 If you are an interviewer or reviewer, it is completely valid to review the architecture and code without running every cloud integration end to end.
 
@@ -100,6 +101,8 @@ For partial local review, you do not need every integration configured. For full
 
 Without those services, the application may still be useful for code review and partial endpoint testing, but related features will fail or be incomplete.
 
+Because the original cloud project was retired, recreating these integrations now means provisioning your own replacement infrastructure rather than reconnecting to an existing environment.
+
 ## 7. Run the Application
 
 Recommended PowerShell command:
@@ -122,6 +125,11 @@ java -jar target/api-0.0.1-SNAPSHOT.jar
 ```
 
 If you prefer pure environment variables instead of `application-local.properties`, run the same commands after exporting the required values.
+
+Important expectation:
+
+- treat local startup here as a best-effort reconstruction, not a guaranteed one-command restore of the original deployed system
+- if the app fails to boot, the most likely causes are missing database schema, missing third-party credentials, or assumptions that depended on the retired private environment
 
 ## 8. Open API Docs
 
@@ -156,6 +164,7 @@ This does not replace real credential rotation, but it helps catch obvious publi
 ## 11. Known Gaps
 
 - Backend only, no checked-in frontend
+- Original cloud environment deleted after the project period
 - Limited automated tests
 - Incomplete public DB bootstrap
 - Public-safe placeholders instead of real deployment values
