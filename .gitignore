@@ -36,9 +36,17 @@ firebase-service-account.json
 .env
 .env.*
 !.env.example
+secrets/
+src/main/resources/application-local.properties
+src/main/resources/application-dev.properties
+src/main/resources/application-private.properties
 application-prod.properties
 application.properties.backup
 pom.xml.backup
+*.pem
+*.p12
+*.jks
+*.keystore
 .claude/
 documents/
 .DS_Store

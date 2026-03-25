@@ -279,15 +279,15 @@ The original private source contained a Firebase service-account JSON file and a
 
 Đây là vấn đề về secret hygiene. Dù là project học tập, việc commit credential thật hoặc dữ liệu cấu hình nhạy cảm vẫn là một điểm trừ lớn về an toàn thông tin.
 
-### 8. Config Drift and Hardcoded URLs
+### 8. Local Secret Handling Still Requires Operator Discipline
 
-[PurchaseController.java](./src/main/java/com/pandadocs/api/controller/PurchaseController.java) hardcodes Vercel success and cancel URLs instead of consistently reading configured PayOS return/cancel values from environment-backed settings. This means deployment behavior can drift from configuration without an obvious warning.
+The public snapshot now routes payment callback URLs and most runtime-sensitive values through environment-backed configuration rather than hardcoded controller constants. It also includes a local-profile template and publication check scripts. However, safe use still depends on the developer keeping real secrets in untracked local files or external secret managers and rotating any credentials that were exposed in the original private history.
 
 Vấn đề này không quá lớn về mặt kiến trúc, nhưng nó phản ánh tình trạng cấu hình chưa đồng nhất giữa code và environment.
 
-### 9. Logging of Sensitive Mail Metadata
+### 9. Verbose Mail Diagnostics
 
-[EmailService.java](./src/main/java/com/pandadocs/api/service/EmailService.java) logs that a mail password exists and even prints a preview of it at startup. Even partial secret previews are a poor security practice and should not appear in production logs.
+[EmailService.java](./src/main/java/com/pandadocs/api/service/EmailService.java) no longer logs secret previews, but it still emits fairly verbose startup diagnostics such as SMTP host, username, and whether a password is present. That is much safer than exposing credential fragments, yet it is still noisier than a production-hardened logging posture would usually allow.
 
 Đây là một chi tiết nhỏ nhưng quan trọng, vì nó cho thấy hệ thống vẫn còn thiếu bước hardening log trước khi có thể được xem là an toàn hơn trong môi trường thật.
 

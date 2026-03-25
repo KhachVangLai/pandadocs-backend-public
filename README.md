@@ -58,21 +58,29 @@ For a deeper technical review, see [PROJECT_REPORT.md](./PROJECT_REPORT.md).
 
 ## Quick Start
 
-1. Install Java 17 and Maven.
-2. Copy [.env.example](./.env.example) and prepare equivalent environment variables.
-3. Provision PostgreSQL and any external services you want to exercise.
-4. Review the full setup guide at [docs/setup.md](./docs/setup.md).
-5. Start the application:
+1. Install Java 17, Maven, and PostgreSQL.
+2. Run the local bootstrap script:
 
-```bash
-./mvnw spring-boot:run
+```powershell
+.\scripts\bootstrap-local.ps1
 ```
 
-6. Open Swagger UI after startup:
+3. Put your Firebase service-account JSON in the ignored `secrets/` folder or supply credentials through environment variables.
+4. Edit `src/main/resources/application-local.properties` with your local values.
+5. Review the full setup guide at [docs/setup.md](./docs/setup.md).
+6. Start the application with the local profile:
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+```
+
+7. Open Swagger UI after startup:
 
 ```text
 http://localhost:8080/swagger-ui.html
 ```
+
+If you do not want a local profile file, you can instead provide the same values through shell environment variables. [.env.example](./.env.example) is the reference list, not an auto-loaded file.
 
 ## Documentation
 
@@ -81,6 +89,17 @@ http://localhost:8080/swagger-ui.html
 - [PROJECT_REPORT.md](./PROJECT_REPORT.md): bilingual project report
 - [SECURITY_ROTATION_CHECKLIST.md](./SECURITY_ROTATION_CHECKLIST.md): publication safety checklist
 - [docs/ai-chat/frontend-integration.md](./docs/ai-chat/frontend-integration.md): AI chat frontend contract
+
+## Local Secrets Workflow
+
+- Public repo: tracked files contain placeholders only
+- Local machine: keep real secrets in `src/main/resources/application-local.properties`, shell env vars, or the ignored `secrets/` folder
+- Cloud deployment: keep real secrets in Secret Manager or deployment environment variables
+- Before pushing publicly, run:
+
+```powershell
+.\scripts\preflight-public-check.ps1
+```
 
 ## Limitations
 

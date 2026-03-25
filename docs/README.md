@@ -7,6 +7,8 @@ This folder contains curated project documentation for the public PandaDocs Back
 - [setup.md](./setup.md): step-by-step local setup and runtime expectations
 - [../README.md](../README.md): public project overview
 - [../PROJECT_REPORT.md](../PROJECT_REPORT.md): detailed bilingual project report
+- [../.env.example](../.env.example): environment variable reference list
+- `../src/main/resources/application-local.example.properties`: local profile template to copy and keep untracked
 
 ## AI Chat Guides
 
@@ -29,3 +31,4 @@ This folder contains curated project documentation for the public PandaDocs Back
 
 - Some AI-chat documents are preserved from the original development period and may reflect the implementation state at that time.
 - The public repo is intentionally a **portfolio snapshot**, so docs prioritize understanding the system over pretending every deployment path is currently maintained.
+- The safest local workflow is: keep real values in local-only files or environment variables, never in tracked Markdown or Spring config backups.
