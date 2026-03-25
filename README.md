@@ -96,7 +96,6 @@ Successful local startup is **not guaranteed** in this public snapshot. The orig
 - [docs/README.md](./docs/README.md): documentation index
 - [docs/setup.md](./docs/setup.md): step-by-step local setup
 - [PROJECT_REPORT.md](./PROJECT_REPORT.md): bilingual project report
-- [SECURITY_ROTATION_CHECKLIST.md](./SECURITY_ROTATION_CHECKLIST.md): publication safety checklist
 - [docs/ai-chat/frontend-integration.md](./docs/ai-chat/frontend-integration.md): AI chat frontend contract
 
 ## Local Secrets Workflow
@@ -135,5 +134,4 @@ The original private project contained deployment-specific values and sensitive 
 - no backup config files remain
 - no secret previews are logged
 - deployment manifests use placeholders or environment-driven values only
-
-See [SECURITY_ROTATION_CHECKLIST.md](./SECURITY_ROTATION_CHECKLIST.md) for the credential rotation checklist that should be completed outside this repository.
+- if any real secrets were ever committed in private history, rotate them outside this repository before publishing related code
