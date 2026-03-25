@@ -325,7 +325,7 @@ Score = 0.4 * keyword_match
 ### Enable Debug Logging
 
 ```properties
-# application.properties
+# application-local.properties
 logging.level.com.pandadocs.api.service.GeminiService=DEBUG
 ```
 

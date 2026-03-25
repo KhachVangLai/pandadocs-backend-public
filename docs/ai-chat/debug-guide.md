@@ -10,11 +10,11 @@
 
 ### ✅ Kiểm tra:
 
-Mở file `src/main/resources/application.properties` và kiểm tra:
+Mở file `src/main/resources/application-local.properties` và kiểm tra:
 
 ```properties
 # Google Gemini Configuration
-gemini.api.key=YOUR_ACTUAL_API_KEY_HERE  # ← Phải là API key thật, không để placeholder
+gemini.api.key=your_gemini_api_key_here  # ← Dùng local config, không commit key thật
 gemini.api.base-url=https://generativelanguage.googleapis.com
 gemini.api.model=gemini-1.5-flash
 ```
@@ -23,9 +23,9 @@ gemini.api.model=gemini-1.5-flash
 
 1. Truy cập: https://aistudio.google.com/app/apikey
 2. Tạo API key mới (miễn phí)
-3. Copy API key và paste vào `application.properties`:
+3. Copy API key và paste vào `application-local.properties`:
    ```properties
-   gemini.api.key=AIzaSyD...your-actual-key-here
+   gemini.api.key=your_gemini_api_key_here
    ```
 4. Restart Spring Boot application
 
@@ -102,7 +102,7 @@ ERROR ChatService - Error calling Gemini API: ...
 ### 🔧 Cách fix theo từng error:
 
 #### HTTP 401/403 - API Key không hợp lệ
-- Kiểm tra lại API key trong application.properties
+- Kiểm tra lại API key trong application-local.properties
 - Tạo API key mới tại https://aistudio.google.com/app/apikey
 - Đảm bảo không có khoảng trắng thừa trong API key
 
@@ -128,7 +128,7 @@ ERROR ChatService - Error calling Gemini API: ...
 
 ### Bước 1: Enable verbose logging
 
-Thêm vào `application.properties`:
+Thêm vào `application-local.properties`:
 ```properties
 # Enable debug logs for chatbox services
 logging.level.com.pandadocs.api.service.ChatService=DEBUG
@@ -229,7 +229,7 @@ curl -X POST http://localhost:8080/api/chat/message \
 
 ## Checklist Tổng hợp
 
-- [ ] GEMINI_API_KEY đã được set trong application.properties
+- [ ] GEMINI_API_KEY đã được set trong application-local.properties
 - [ ] Database có ít nhất 1 template với status=PUBLISHED
 - [ ] Application đã restart sau khi config GEMINI_API_KEY
 - [ ] Logs không có error "GEMINI_API_KEY is not configured"

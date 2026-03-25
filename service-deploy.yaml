@@ -45,7 +45,7 @@ spec:
         - name: MAIL_USERNAME
           value: "apikey"
         - name: MAIL_FROM_EMAIL
-          value: "pandadocs6204@gmail.com"
+          value: "no-reply@example.com"
         - name: DB_URL
           valueFrom:
             secretKeyRef:

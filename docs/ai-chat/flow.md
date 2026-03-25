@@ -326,10 +326,10 @@ int limit = user.isPremium() ? 20 : 10;
 return templateSearchService.searchTemplates(userMessage, category, maxPrice, limit);
 ```
 
-### Option 3: Config trong application.properties
+### Option 3: Config trong application-local.properties
 
 ```properties
-# Add to application.properties
+# Add to application-local.properties
 chat.max-templates-per-request=10
 
 # Add to GeminiConfig.java

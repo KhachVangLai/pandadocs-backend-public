@@ -22,7 +22,7 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
-    @Value("${mail.from.email:pandadocs6204@gmail.com}")
+    @Value("${mail.from.email:no-reply@example.com}")
     private String fromEmail;
 
     @Value("${spring.mail.host:smtp.sendgrid.net}")

@@ -23,10 +23,6 @@ This folder contains curated project documentation for the public PandaDocs Back
 - [reference/password-requirements.md](./reference/password-requirements.md): password validation rules
 - [../database/README.md](../database/README.md): database migration notes
 
-## Archived / Historical Docs
-
-- [archive/spring-starter-help.md](./archive/spring-starter-help.md): default Spring starter help file kept only for historical context
-
 ## Notes
 
 - Some AI-chat documents are preserved from the original development period and may reflect the implementation state at that time.

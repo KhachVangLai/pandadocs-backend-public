@@ -320,7 +320,7 @@ public class GeminiService {
         // Validate API key
         if (geminiConfig.getApiKey() == null || geminiConfig.getApiKey().isBlank()) {
             log.error("GEMINI_API_KEY is not configured!");
-            throw new GeminiApiException("GEMINI_API_KEY is not configured in application.properties");
+            throw new GeminiApiException("GEMINI_API_KEY is not configured in local runtime configuration");
         }
 
         String apiUrl = String.format("%s/v1beta/models/%s:generateContent?key=%s",
