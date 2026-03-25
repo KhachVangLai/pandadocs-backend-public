@@ -1,0 +1,59 @@
+# ================================================================
+# DOCKER IGNORE - Exclude files from Docker build context
+# ================================================================
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.iml
+.project
+.classpath
+.settings
+
+# Build artifacts
+target/
+!target/api-0.0.1-SNAPSHOT.jar
+
+# Environment files (IMPORTANT: Don't include in image!)
+.env
+.env.*
+!.env.example
+
+# Firebase credentials (will be injected via Secret Manager)
+firebase-service-account.json
+
+# Documentation
+*.md
+docs/
+FINAL_DEPLOY_CHECKLIST.md
+PRODUCTION_DEPLOYMENT_CHECKLIST.md
+PRIVACY_POLICY_V2.md
+TERMS_OF_SERVICE_V2.md
+FRONTEND_LEGAL_PAGES_GUIDE.md
+PAYOS_INTEGRATION_GUIDE.md
+
+# SQL scripts
+*.sql
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+
+# Maven wrapper (not needed, using base image's Maven)
+.mvn/
+mvnw
+mvnw.cmd
+
+# Docker files
+Dockerfile
+.dockerignore

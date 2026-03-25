@@ -1,0 +1,37 @@
+package com.pandadocs.api.repository;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+import com.pandadocs.api.model.ChatConversation;
+
+@Repository
+public interface ChatConversationRepository extends JpaRepository<ChatConversation, Long> {
+  // Tìm conversation theo session ID
+  Optional<ChatConversation> findBySessionId(String sessionId);
+
+  // Kiểm tra session ID có tồn tại không
+  Boolean existsBySessionId(String sessionId);
+
+  // Tìm tất cả conversations của user
+  @Query("SELECT c FROM ChatConversation c WHERE c.user.id = :userId ORDER BY c.lastActivityAt DESC")
+  List<ChatConversation> findByUserIdOrderByLastActivityAtDesc(@Param("userId") Long userId);
+
+  // Tìm conversation của user theo session ID (with user eagerly loaded)
+  @Query("SELECT c FROM ChatConversation c LEFT JOIN FETCH c.user WHERE c.sessionId = :sessionId AND c.user.id = :userId")
+  Optional<ChatConversation> findBySessionIdAndUserId(@Param("sessionId") String sessionId, @Param("userId") Long userId);
+
+  // Tìm conversations cũ hơn timestamp (để cleanup)
+  @Query("SELECT c FROM ChatConversation c WHERE c.lastActivityAt < :cutoffTime")
+  List<ChatConversation> findOlderThan(@Param("cutoffTime") Instant cutoffTime);
+
+  // Đếm số conversations của user
+  long countByUserId(Long userId);
+
+  // Xóa conversations cũ hơn timestamp
+  void deleteByLastActivityAtBefore(Instant cutoffTime);
+}
