@@ -15,6 +15,8 @@ PandaDocs Backend is a Java/Spring Boot service for a template marketplace with:
 
 This repository is a **public-safe snapshot** of a past university project. It is shared to demonstrate backend design, domain modeling, security/authentication flows, third-party integrations, and documentation quality. The frontend is a separate application and is not included here.
 
+Original project period: approximately **October 2025 to November 2025**, based on the feature-branch and default-branch activity visible in the original private repository history.
+
 ## For Interviewers / Recruiters
 
 - This is a **past academic project**, not an actively maintained production system.
