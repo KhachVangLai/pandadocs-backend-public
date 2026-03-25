@@ -1,8 +1,8 @@
 # PandaDocs Backend
 
-Public-safe portfolio edition of a Spring Boot backend for a document-template marketplace.
+Sanitized public portfolio snapshot of a Spring Boot backend for a document-template marketplace.
 
-## Overview
+## Project Snapshot
 
 PandaDocs Backend is a Java/Spring Boot service for a template marketplace with:
 
@@ -13,9 +13,16 @@ PandaDocs Backend is a Java/Spring Boot service for a template marketplace with:
 - PayOS integration for paid checkout
 - Gemini-powered AI chat for template discovery
 
-This repository is a **sanitized public snapshot**. It intentionally excludes private deployment history, credential-bearing artifacts, and internal environment values. The frontend is a separate application and is not included here.
+This repository is a **public-safe snapshot** of a past university project. It is shared to demonstrate backend design, domain modeling, security/authentication flows, third-party integrations, and documentation quality. The frontend is a separate application and is not included here.
 
-## Stack
+## For Interviewers / Recruiters
+
+- This is a **past academic project**, not an actively maintained production system.
+- The repo was published as a **sanitized portfolio snapshot** after removing sensitive artifacts and private deployment context.
+- It is intended to show backend engineering ability: Spring Boot architecture, REST API design, auth, payments, cloud storage, and AI-assisted product search.
+- Known limitations are intentionally preserved and documented rather than hidden.
+
+## Tech Stack
 
 - Java 17
 - Spring Boot 3
@@ -27,46 +34,70 @@ This repository is a **sanitized public snapshot**. It intentionally excludes pr
 - Swagger / OpenAPI
 - Docker
 
-## Repository Notes
+## Key Features
 
-- `src/main/java/com/pandadocs/api`: application source
-- `src/main/resources/application.properties`: env-driven runtime config
-- `database/`: migration notes and SQL
-- `PROJECT_REPORT.md`: detailed bilingual project report
-- `CHATBOX_*` docs: AI chat design and integration notes
+- User authentication with username/password and Google OAuth2
+- Marketplace flows for browsing, purchasing, and downloading templates
+- Seller registration, template upload, and seller dashboard data
+- Admin moderation and operational dashboard flows
+- AI chat assistant with template-search-first recommendation logic
+- File storage and preview handling via Firebase Storage
 
-This public repo uses clean history and placeholder configuration values. Real credentials must come from environment variables or secret managers.
+## Architecture Summary
 
-## Local Setup
+The backend follows a standard layered Spring structure:
+
+- `src/main/java/com/pandadocs/api/controller`: REST endpoints
+- `src/main/java/com/pandadocs/api/service`: business logic and integrations
+- `src/main/java/com/pandadocs/api/repository`: JPA repositories
+- `src/main/java/com/pandadocs/api/model`: domain entities and enums
+- `src/main/java/com/pandadocs/api/dto`: request/response models
+- `src/main/java/com/pandadocs/api/security`: JWT, OAuth2, and access control
+
+For a deeper technical review, see [PROJECT_REPORT.md](./PROJECT_REPORT.md).
+
+## Quick Start
 
 1. Install Java 17 and Maven.
-2. Copy `.env.example` to `.env` or export equivalent environment variables.
-3. Provision PostgreSQL and required cloud services.
-4. Run the application:
+2. Copy [.env.example](./.env.example) and prepare equivalent environment variables.
+3. Provision PostgreSQL and any external services you want to exercise.
+4. Review the full setup guide at [docs/setup.md](./docs/setup.md).
+5. Start the application:
 
 ```bash
 ./mvnw spring-boot:run
 ```
 
-Or build a jar:
+6. Open Swagger UI after startup:
 
-```bash
-./mvnw clean package
-java -jar target/api-0.0.1-SNAPSHOT.jar
+```text
+http://localhost:8080/swagger-ui.html
 ```
 
-## Environment Variables
+## Documentation
 
-Use [.env.example](./.env.example) as the reference template. Important groups:
+- [docs/README.md](./docs/README.md): documentation index
+- [docs/setup.md](./docs/setup.md): step-by-step local setup
+- [PROJECT_REPORT.md](./PROJECT_REPORT.md): bilingual project report
+- [SECURITY_ROTATION_CHECKLIST.md](./SECURITY_ROTATION_CHECKLIST.md): publication safety checklist
+- [docs/ai-chat/frontend-integration.md](./docs/ai-chat/frontend-integration.md): AI chat frontend contract
 
-- Database: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`
-- Security: `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
-- Storage: `FIREBASE_CREDENTIALS_PATH`, `FIREBASE_STORAGE_BUCKET`
-- Payments: `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, `PAYOS_CHECKSUM_KEY`, URLs
-- Email: `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`
-- AI Chat: `GEMINI_API_KEY`, chat quota values
+## Limitations
 
-## Security Notice
+- This is a backend-only repo; the frontend is separate.
+- Database bootstrap is not fully automated in this public snapshot.
+- Some legacy docs are preserved for context and may reflect historical implementation state.
+- Test coverage is limited and the repo is presented primarily for architecture/code review, not as a finished production deployment.
+
+## Repository Status
+
+This repo should be treated as a **portfolio snapshot**:
+
+- stable enough to review
+- not guaranteed to receive ongoing feature development
+- intentionally public-safe rather than infrastructure-complete
+
+## Security Note
 
 The original private project contained deployment-specific values and sensitive artifacts. This public version removes those files and replaces deployable examples with placeholders. Before publishing your own fork, verify that:
 

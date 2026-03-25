@@ -22,7 +22,7 @@ This repository is a backend-only public snapshot and does not contain a checked
 
 Điều này rất quan trọng khi mô tả dự án với giảng viên hoặc đưa vào portfolio: repo hiện tại là backend của hệ thống PandaDocs, không phải toàn bộ sản phẩm hoàn chỉnh từ frontend đến backend.
 
-Frontend behavior can still be inferred from integration-oriented documents such as [CHATBOX_FRONTEND_GUIDE.md](./CHATBOX_FRONTEND_GUIDE.md) and from environment variables that reference a separate frontend host in [application.properties](./src/main/resources/application.properties) and [service-deploy.yaml](./service-deploy.yaml). The backend clearly expects a separate web client for OAuth redirects, payment return pages, and chat UI rendering.
+Frontend behavior can still be inferred from integration-oriented documents such as [frontend-integration.md](./docs/ai-chat/frontend-integration.md) and from environment variables that reference a separate frontend host in [application.properties](./src/main/resources/application.properties) and [service-deploy.yaml](./service-deploy.yaml). The backend clearly expects a separate web client for OAuth redirects, payment return pages, and chat UI rendering.
 
 Nói cách khác, nếu cần demo trải nghiệm người dùng hoàn chỉnh, phần frontend nhiều khả năng tồn tại ở repo khác hoặc mới chỉ được mô tả ở mức tài liệu tích hợp.
 
@@ -245,7 +245,7 @@ This repository does not contain a checked-in frontend implementation. The backe
 
 ### 2. Documentation and Implementation Drift
 
-There is drift between some integration documents and the checked-in controller behavior. For example, [CHATBOX_FRONTEND_GUIDE.md](./CHATBOX_FRONTEND_GUIDE.md) documents path-style chat session routes, while [ChatController.java](./src/main/java/com/pandadocs/api/controller/ChatController.java) uses query-parameter-based session endpoints. The guide also suggests flows that do not map cleanly to existing controllers.
+There is drift between some integration documents and the checked-in controller behavior. For example, [frontend-integration.md](./docs/ai-chat/frontend-integration.md) documents path-style chat session routes, while [ChatController.java](./src/main/java/com/pandadocs/api/controller/ChatController.java) uses query-parameter-based session endpoints. The guide also suggests flows that do not map cleanly to existing controllers.
 
 Đây là dạng “nợ tài liệu” thường gặp khi tính năng thay đổi nhanh hơn tài liệu. Tuy không phá vỡ kiến trúc, nó làm onboarding và demo trở nên khó hơn.
 
@@ -335,7 +335,7 @@ The following files were the main anchors for this report:
 - [dockerfile](./dockerfile)
 - [env-vars.yaml](./env-vars.yaml)
 - [service-deploy.yaml](./service-deploy.yaml)
-- [CHATBOX_FRONTEND_GUIDE.md](./CHATBOX_FRONTEND_GUIDE.md)
+- [frontend-integration.md](./docs/ai-chat/frontend-integration.md)
 
 ---
 

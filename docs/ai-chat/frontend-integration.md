@@ -899,6 +899,6 @@ See working example at: `/examples/chat-integration-example.tsx`
 ## 📞 Support
 
 Questions? Check:
-- [CHATBOX_SETUP.md](CHATBOX_SETUP.md) - Backend setup
-- [CHATBOX_FLOW.md](CHATBOX_FLOW.md) - How RAG works
-- [CHATBOX_DEBUG.md](CHATBOX_DEBUG.md) - Debugging guide
+- [setup.md](setup.md) - Backend setup
+- [flow.md](flow.md) - How RAG works
+- [debug-guide.md](debug-guide.md) - Debugging guide
