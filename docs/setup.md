@@ -146,7 +146,7 @@ This is the easiest way for a reviewer to inspect the API surface.
 If you want to understand the project quickly, review in this order:
 
 1. [../README.md](../README.md)
-2. [../PROJECT_REPORT.md](../PROJECT_REPORT.md)
+2. [./project-report.md](./project-report.md)
 3. `src/main/java/com/pandadocs/api/controller`
 4. `src/main/java/com/pandadocs/api/service`
 5. [./ai-chat/frontend-integration.md](./ai-chat/frontend-integration.md)

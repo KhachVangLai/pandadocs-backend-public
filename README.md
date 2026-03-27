@@ -63,7 +63,7 @@ The backend follows a standard layered Spring structure:
 - `src/main/java/com/pandadocs/api/dto`: request/response models
 - `src/main/java/com/pandadocs/api/security`: JWT, OAuth2, and access control
 
-For a deeper technical review, see [PROJECT_REPORT.md](./PROJECT_REPORT.md).
+For a deeper technical review, see [docs/project-report.md](./docs/project-report.md).
 
 ## Database Overview
 
@@ -196,7 +196,7 @@ Successful local startup is **not guaranteed** in this public snapshot. The orig
 
 - [docs/README.md](./docs/README.md): documentation index
 - [docs/setup.md](./docs/setup.md): step-by-step local setup
-- [PROJECT_REPORT.md](./PROJECT_REPORT.md): bilingual project report
+- [docs/project-report.md](./docs/project-report.md): bilingual project report
 - [docs/ai-chat/frontend-integration.md](./docs/ai-chat/frontend-integration.md): AI chat frontend contract
 
 ## Local Secrets Workflow

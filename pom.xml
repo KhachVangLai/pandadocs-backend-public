@@ -11,20 +11,13 @@
 	<groupId>com.pandadocs</groupId>
 	<artifactId>api</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>api</name>
-	<description>Demo project for Spring Boot</description>
-	<url/>
-	<licenses>
-		<license/>
-	</licenses>
-	<developers>
-		<developer/>
-	</developers>
+	<name>PandaDocs Backend</name>
+	<description>Public portfolio snapshot of a Spring Boot backend for a document-template marketplace</description>
+	<url>https://github.com/KhachVangLai/pandadocs-backend-public</url>
 	<scm>
-		<connection/>
-		<developerConnection/>
-		<tag/>
-		<url/>
+		<connection>scm:git:https://github.com/KhachVangLai/pandadocs-backend-public.git</connection>
+		<developerConnection>scm:git:https://github.com/KhachVangLai/pandadocs-backend-public.git</developerConnection>
+		<url>https://github.com/KhachVangLai/pandadocs-backend-public</url>
 	</scm>
 	<properties>
 		<java.version>17</java.version>
@@ -61,6 +54,11 @@
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
@@ -205,3 +203,4 @@
 	</build>
 
 </project>
+

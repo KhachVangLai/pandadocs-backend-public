@@ -27,10 +27,6 @@ import com.pandadocs.api.service.ChatService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * REST Controller for AI Chatbox endpoints
- * All endpoints require authentication (USER role)
- */
 @RestController
 @RequestMapping("/api/chat")
 @PreAuthorize("hasRole('USER')")
@@ -40,13 +36,6 @@ public class ChatController {
     @Autowired
     private ChatService chatService;
 
-    /**
-     * Send a message to AI chatbox and get response
-     *
-     * POST /api/chat/message
-     * Body: { "sessionId": "optional", "message": "user message" }
-     * Response: { "sessionId", "message", "templates", "actionButtons", "conversationTitle" }
-     */
     @PostMapping("/message")
     public ResponseEntity<?> sendMessage(
             @Valid @RequestBody ChatMessageRequest request,
@@ -56,8 +45,12 @@ public class ChatController {
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             Long userId = userDetails.getId();
 
-            log.info("User {} sending chat message: sessionId={}, message={}",
-                    userId, request.getSessionId(), request.getMessage());
+            log.info(
+                    "User {} sending chat message for session {} ({} characters)",
+                    userId,
+                    request.getSessionId(),
+                    request.getMessage() != null ? request.getMessage().length() : 0
+            );
 
             ChatMessageResponse response = chatService.processMessage(
                     userId,
@@ -82,12 +75,6 @@ public class ChatController {
         }
     }
 
-    /**
-     * Get current chat session
-     *
-     * GET /api/chat/session?sessionId=xxx
-     * Response: { "sessionId", "conversationTitle", "messageCount", "messages" }
-     */
     @GetMapping("/session")
     public ResponseEntity<?> getSession(
             @RequestParam String sessionId,
@@ -96,8 +83,6 @@ public class ChatController {
         try {
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             Long userId = userDetails.getId();
-
-            log.debug("User {} retrieving session: {}", userId, sessionId);
 
             ChatSessionResponse response = chatService.getSession(userId, sessionId);
             return ResponseEntity.ok(response);
@@ -114,12 +99,6 @@ public class ChatController {
         }
     }
 
-    /**
-     * Clear/delete a chat session
-     *
-     * DELETE /api/chat/session?sessionId=xxx
-     * Response: { "message": "Session cleared successfully" }
-     */
     @DeleteMapping("/session")
     public ResponseEntity<?> clearSession(
             @RequestParam String sessionId,
@@ -146,13 +125,6 @@ public class ChatController {
         }
     }
 
-    /**
-     * Handle purchase action from chat (Buy/Add/View buttons)
-     *
-     * POST /api/chat/purchase-action
-     * Body: { "sessionId", "action": "BUY_NOW", "templateId": 123 }
-     * Response: Depends on action type
-     */
     @PostMapping("/purchase-action")
     public ResponseEntity<?> handlePurchaseAction(
             @Valid @RequestBody PurchaseActionRequest request,

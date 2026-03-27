@@ -1,19 +1,28 @@
 package com.pandadocs.api.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pandadocs.api.config.PayOSConfig;
-import com.pandadocs.api.dto.PayOSWebhookData;
-import jakarta.annotation.PostConstruct;
-import lombok.extern.slf4j.Slf4j;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
+import java.util.HexFormat;
+import java.util.List;
+import java.util.Locale;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+
+import com.pandadocs.api.config.PayOSConfig;
+
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import vn.payos.PayOS;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
-import vn.payos.model.v2.paymentRequests.PaymentLinkItem;
 import vn.payos.model.v2.paymentRequests.PaymentLink;
-
-import java.util.List;
+import vn.payos.model.v2.paymentRequests.PaymentLinkItem;
 
 @Service
 @Slf4j
@@ -45,11 +54,24 @@ public class PayOSService {
         return payOS.paymentRequests().create(request);
     }
 
-    public boolean verifyWebhookSignature(String data, String signature) throws Exception {
-        // The SDK does not provide a direct method to verify the webhook signature.
-        // You might need to implement this manually if the SDK doesn't support it.
-        // For now, we will assume the signature is valid.
-        return true;
+    public boolean verifyWebhookSignature(String data, String signature) {
+        if (!StringUtils.hasText(data) || !StringUtils.hasText(signature) || !StringUtils.hasText(payOSConfig.getChecksumKey())) {
+            return false;
+        }
+
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(payOSConfig.getChecksumKey().getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            String expectedSignature = HexFormat.of().formatHex(mac.doFinal(data.getBytes(StandardCharsets.UTF_8)));
+            String providedSignature = signature.trim().toLowerCase(Locale.ROOT);
+            return MessageDigest.isEqual(
+                    expectedSignature.getBytes(StandardCharsets.UTF_8),
+                    providedSignature.getBytes(StandardCharsets.UTF_8)
+            );
+        } catch (GeneralSecurityException e) {
+            log.error("Unable to verify PayOS webhook signature", e);
+            return false;
+        }
     }
 
     public PaymentLink getPaymentInfo(Long orderCode) throws Exception {

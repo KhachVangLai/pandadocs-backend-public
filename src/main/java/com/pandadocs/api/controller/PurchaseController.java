@@ -3,20 +3,23 @@ package com.pandadocs.api.controller;
 import java.time.Instant;
 import java.util.Arrays;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.pandadocs.api.config.PayOSConfig;
 import com.pandadocs.api.dto.MessageResponse;
 import com.pandadocs.api.dto.PurchaseRequest;
 import com.pandadocs.api.dto.PurchaseResponse;
-import com.pandadocs.api.config.PayOSConfig;
 import com.pandadocs.api.model.Library;
 import com.pandadocs.api.model.Order;
 import com.pandadocs.api.model.OrderItem;
@@ -32,9 +35,6 @@ import com.pandadocs.api.security.services.UserDetailsImpl;
 import com.pandadocs.api.service.PayOSService;
 
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.transaction.annotation.Transactional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
 import vn.payos.model.v2.paymentRequests.PaymentLinkItem;
 
@@ -83,7 +83,6 @@ public class PurchaseController {
                 return ResponseEntity.badRequest().body(new MessageResponse("Error: You already own this template."));
             }
 
-            // Free templates are granted immediately without creating a payment link.
             if (templateToPurchase.getPrice() == null || templateToPurchase.getPrice() == 0) {
                 Library library = new Library();
                 library.setUser(currentUser);
@@ -117,7 +116,7 @@ public class PurchaseController {
             order.setUser(currentUser);
             order.setCreatedAt(Instant.now());
             order.setTotalAmount(templateToPurchase.getPrice());
-            order.setStatus("PENDING"); // For backward compatibility
+            order.setStatus("PENDING");
             order.setPaymentStatus(PaymentStatus.PENDING_PAYMENT);
 
             OrderItem orderItem = new OrderItem();
@@ -128,14 +127,10 @@ public class PurchaseController {
 
             order = orderRepository.save(order);
 
-            // PayOS limits payment descriptions to 25 characters.
             String templateTitle = templateToPurchase.getTitle();
-            String description;
-            if (templateTitle.length() <= 22) {
-                description = templateTitle;
-            } else {
-                description = templateTitle.substring(0, 22) + "..."; // 22 + 3 = 25
-            }
+            String description = templateTitle.length() <= 22
+                    ? templateTitle
+                    : templateTitle.substring(0, 22) + "...";
             String returnUrl = payOSConfig.getReturnUrl();
             String cancelUrl = payOSConfig.getCancelUrl();
 
@@ -165,18 +160,13 @@ public class PurchaseController {
                     "Vui lòng thanh toán để hoàn tất mua template"
                 );
                 return ResponseEntity.ok(response);
-            } else {
-                orderRepository.delete(order);
-                return ResponseEntity.badRequest().body(new MessageResponse("Error: Failed to create payment link"));
             }
 
+            orderRepository.delete(order);
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: Failed to create payment link"));
         } catch (Exception e) {
-            e.printStackTrace();
-            String errorMsg = e.getMessage();
-            if (e.getCause() != null) {
-                errorMsg += " | Cause: " + e.getCause().getMessage();
-            }
-            return ResponseEntity.badRequest().body(new MessageResponse("Payment creation failed: " + errorMsg));
+            logger.error("Payment creation failed for template {}", purchaseRequest.getTemplateId(), e);
+            return ResponseEntity.badRequest().body(new MessageResponse("Payment creation failed"));
         }
     }
 }

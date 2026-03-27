@@ -329,7 +329,7 @@ public class GeminiService {
                 geminiConfig.getApiKey());
 
         log.info("Calling Gemini API: {} with model {}", geminiConfig.getBaseUrl(), geminiConfig.getModel());
-        log.debug("Request body: {}", requestBody.toString());
+        log.debug("Prepared Gemini request with {} content parts", requestBody.getAsJsonArray("contents").size());
 
         RequestBody body = RequestBody.create(requestBody.toString(), JSON);
         Request request = new Request.Builder()
@@ -346,7 +346,6 @@ public class GeminiService {
 
             String responseBody = response.body().string();
             log.info("Gemini API call successful, response length: {} chars", responseBody.length());
-            log.debug("Full Gemini API response: {}", responseBody);
 
             // Parse response
             JsonObject jsonResponse = gson.fromJson(responseBody, JsonObject.class);
@@ -379,3 +378,4 @@ public class GeminiService {
         return "Xin lỗi, tôi không thể xử lý yêu cầu của bạn lúc này. Vui lòng thử lại.";
     }
 }
+

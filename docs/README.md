@@ -6,7 +6,7 @@ This folder contains curated project documentation for the public PandaDocs Back
 
 - [setup.md](./setup.md): step-by-step local setup and runtime expectations
 - [../README.md](../README.md): public project overview
-- [../PROJECT_REPORT.md](../PROJECT_REPORT.md): detailed bilingual project report
+- [project-report.md](./project-report.md): detailed bilingual project report
 - [../.env.example](../.env.example): environment variable reference list
 - `../src/main/resources/application-local.example.properties`: local profile template to copy and keep untracked
 

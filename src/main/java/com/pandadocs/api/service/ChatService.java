@@ -99,7 +99,6 @@ public class ChatService {
                     session.getMessages(),
                     templates
             );
-            log.debug("Gemini response: {}", aiResponse);
         } catch (Exception e) {
             log.error("Error calling Gemini API: {}", e.getMessage(), e);
             aiResponse = generateFallbackResponse(templates);
@@ -115,7 +114,6 @@ public class ChatService {
             try {
                 String title = geminiService.generateConversationTitle(userMessage);
                 session.setConversationTitle(title);
-                log.debug("Generated conversation title: {}", title);
             } catch (Exception e) {
                 log.error("Error generating conversation title", e);
             }
@@ -433,3 +431,6 @@ public class ChatService {
         }
     }
 }
+
+
+

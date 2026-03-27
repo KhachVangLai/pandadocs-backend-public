@@ -1,29 +1,53 @@
 package com.pandadocs.api.controller;
 
-import org.springframework.transaction.annotation.Transactional;
-import com.pandadocs.api.dto.MessageResponse;
-import com.pandadocs.api.dto.PayOSWebhookData;
-import com.pandadocs.api.model.*;
-import com.pandadocs.api.repository.*;
-import com.pandadocs.api.service.PayOSService;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import vn.payos.model.v2.paymentRequests.PaymentLink;
-
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pandadocs.api.dto.MessageResponse;
+import com.pandadocs.api.dto.PayOSWebhookData;
+import com.pandadocs.api.model.ERole;
+import com.pandadocs.api.model.Library;
+import com.pandadocs.api.model.Notification;
+import com.pandadocs.api.model.Order;
+import com.pandadocs.api.model.OrderItem;
+import com.pandadocs.api.model.PaymentStatus;
+import com.pandadocs.api.model.Template;
+import com.pandadocs.api.model.User;
+import com.pandadocs.api.repository.LibraryRepository;
+import com.pandadocs.api.repository.NotificationRepository;
+import com.pandadocs.api.repository.OrderRepository;
+import com.pandadocs.api.security.services.UserDetailsImpl;
+import com.pandadocs.api.service.PayOSService;
+
+import lombok.extern.slf4j.Slf4j;
+import vn.payos.model.v2.paymentRequests.PaymentLink;
+
 @RestController
 @RequestMapping("/api/payments")
+@CrossOrigin(origins = "*", maxAge = 3600)
 @Slf4j
 public class PaymentController {
 
     @Autowired
     private OrderRepository orderRepository;
+
     @Autowired
     private LibraryRepository libraryRepository;
 
@@ -33,90 +57,71 @@ public class PaymentController {
     @Autowired
     private PayOSService payOSService;
 
-    /**
-     * Webhook endpoint để nhận callback từ PayOS khi thanh toán thành công
-     */
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @PostMapping("/payos-webhook")
     @Transactional
     public ResponseEntity<?> handlePayOSWebhook(@RequestBody PayOSWebhookData webhookData) {
         try {
-            log.info("Received PayOS webhook: {}", webhookData);
+            String dataToVerify = objectMapper.writeValueAsString(webhookData.getData());
+            if (!payOSService.verifyWebhookSignature(dataToVerify, webhookData.getSignature())) {
+                log.warn("Rejected PayOS webhook due to invalid signature");
+                return ResponseEntity.badRequest().body(new MessageResponse("Invalid signature"));
+            }
 
-            // 1. Verify webhook signature
-            // Note: PayOS signature verification depends on their specific implementation
-            // You may need to adjust this based on PayOS documentation
-            // String dataToVerify = objectMapper.writeValueAsString(webhookData.getData());
-            // if (!payOSService.verifyWebhookSignature(dataToVerify, webhookData.getSignature())) {
-            //     log.error("Invalid webhook signature");
-            //     return ResponseEntity.badRequest().body(new MessageResponse("Invalid signature"));
-            // }
-
-            // 2. Kiểm tra webhook có success không
             if (!webhookData.isSuccess() || webhookData.getData() == null) {
-                log.warn("Webhook received but payment not successful");
                 return ResponseEntity.ok(new MessageResponse("Webhook received but payment not successful"));
             }
 
-            // 3. Tìm Order theo orderCode
             Long orderCode = webhookData.getData().getOrderCode();
+            log.info("Received verified PayOS webhook for order {}", orderCode);
+
             Order order = orderRepository.findById(orderCode)
                     .orElseThrow(() -> new RuntimeException("Order not found: " + orderCode));
 
-            // 4. Kiểm tra order đã được process chưa (tránh duplicate webhook)
             if (order.getPaymentStatus() == PaymentStatus.PAID) {
-                log.info("Order {} already processed", orderCode);
                 return ResponseEntity.ok(new MessageResponse("Order already processed"));
             }
 
-            // 5. Cập nhật Order status
             order.setPaymentStatus(PaymentStatus.PAID);
-            order.setStatus("COMPLETED"); // For backward compatibility
+            order.setStatus("COMPLETED");
             order.setPaidAt(Instant.now());
             orderRepository.save(order);
 
-            // 6. Lấy template từ OrderItem (giả định 1 order có 1 template)
-            OrderItem orderItem = order.getOrderItems().iterator().next();
+            OrderItem orderItem = order.getOrderItems().stream()
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Order has no items"));
             Template template = orderItem.getTemplate();
             User user = order.getUser();
 
-            // 7. Thêm template vào Library của user
-            Library libraryEntry = new Library();
-            libraryEntry.setUser(user);
-            libraryEntry.setTemplate(template);
-            libraryEntry.setAcquiredAt(Instant.now());
-            libraryRepository.save(libraryEntry);
+            if (!libraryRepository.existsByUserAndTemplate(user, template)) {
+                Library libraryEntry = new Library();
+                libraryEntry.setUser(user);
+                libraryEntry.setTemplate(template);
+                libraryEntry.setAcquiredAt(Instant.now());
+                libraryRepository.save(libraryEntry);
+            }
 
-            // 8. Tạo notification cho user
-            String message = "Thanh toán thành công! Template '" + template.getTitle() + "' đã được thêm vào thư viện của bạn.";
             Notification notification = new Notification();
             notification.setUser(user);
-            notification.setMessage(message);
+            notification.setMessage("Thanh toán thành công! Template '" + template.getTitle() + "' đã được thêm vào thư viện của bạn.");
             notification.setCreatedAt(Instant.now());
             notificationRepository.save(notification);
 
-            log.info("Payment processed successfully for order {}", orderCode);
             return ResponseEntity.ok(new MessageResponse("Payment processed successfully"));
-
         } catch (Exception e) {
             log.error("Error processing PayOS webhook", e);
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(new MessageResponse("Error processing webhook"));
         }
     }
 
-    /**
-     * Complete payment sau khi user quay về từ PayOS
-     * Frontend gọi endpoint này để hoàn tất đơn hàng
-     */
     @PostMapping("/complete/{orderId}")
     @Transactional
     public ResponseEntity<?> completePayment(@PathVariable Long orderId) {
         try {
-            log.info("Complete payment request for order: {}", orderId);
+            Order order = requireAccessibleOrder(orderId);
 
-            Order order = orderRepository.findById(orderId)
-                    .orElseThrow(() -> new RuntimeException("Order not found"));
-
-            // Nếu đã PAID rồi thì return success luôn
             if (order.getPaymentStatus() == PaymentStatus.PAID) {
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", true);
@@ -125,70 +130,56 @@ public class PaymentController {
                 return ResponseEntity.ok(response);
             }
 
-            // Verify payment with PayOS
             PaymentLink paymentInfo = payOSService.getPaymentInfo(orderId);
-            if (paymentInfo == null || paymentInfo.getStatus() == null ||
-                !paymentInfo.getStatus().name().equals("PAID")) {
+            if (paymentInfo == null || paymentInfo.getStatus() == null || !paymentInfo.getStatus().name().equals("PAID")) {
                 return ResponseEntity.badRequest().body(new MessageResponse("Payment not confirmed by PayOS"));
             }
 
-            // Update payment status
             order.setPaymentStatus(PaymentStatus.PAID);
             order.setStatus("COMPLETED");
             order.setPaidAt(Instant.now());
             orderRepository.save(order);
 
-            // Get template from order
-            OrderItem orderItem = order.getOrderItems().iterator().next();
+            OrderItem orderItem = order.getOrderItems().stream()
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Order has no items"));
             Template template = orderItem.getTemplate();
             User user = order.getUser();
 
-            // Check if already in library (double check)
-            boolean alreadyOwned = libraryRepository.existsByUserAndTemplate(user, template);
-            if (!alreadyOwned) {
-                // Add to Library
+            if (!libraryRepository.existsByUserAndTemplate(user, template)) {
                 Library libraryEntry = new Library();
                 libraryEntry.setUser(user);
                 libraryEntry.setTemplate(template);
                 libraryEntry.setAcquiredAt(Instant.now());
                 libraryRepository.save(libraryEntry);
                 log.info("Added template {} to user {} library", template.getId(), user.getId());
-            } else {
-                log.info("Template {} already in user {} library", template.getId(), user.getId());
             }
 
-            // Create notification
-            String message = "Thanh toán thành công! Template '" + template.getTitle() + "' đã được thêm vào thư viện của bạn.";
             Notification notification = new Notification();
             notification.setUser(user);
-            notification.setMessage(message);
+            notification.setMessage("Thanh toán thành công! Template '" + template.getTitle() + "' đã được thêm vào thư viện của bạn.");
             notification.setCreatedAt(Instant.now());
             notificationRepository.save(notification);
-
-            log.info("Payment completed successfully for order {}", orderId);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "Payment completed successfully");
             response.put("orderId", order.getId());
             response.put("paymentStatus", order.getPaymentStatus());
-
             return ResponseEntity.ok(response);
-
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
         } catch (Exception e) {
             log.error("Error completing payment for order {}", orderId, e);
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(new MessageResponse("Error completing payment"));
         }
     }
 
-    /**
-     * Endpoint để frontend query trạng thái thanh toán (read-only)
-     */
     @GetMapping("/verify/{orderId}")
+    @Transactional(readOnly = true)
     public ResponseEntity<?> verifyPaymentStatus(@PathVariable Long orderId) {
         try {
-            Order order = orderRepository.findById(orderId)
-                    .orElseThrow(() -> new RuntimeException("Order not found"));
+            Order order = requireAccessibleOrder(orderId);
 
             Map<String, Object> response = new HashMap<>();
             response.put("orderId", order.getId());
@@ -199,31 +190,57 @@ public class PaymentController {
             response.put("paidAt", order.getPaidAt());
 
             return ResponseEntity.ok(response);
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: " + e.getMessage()));
+            log.error("Error verifying payment status for order {}", orderId, e);
+            return ResponseEntity.badRequest().body(new MessageResponse("Error verifying payment status"));
         }
     }
 
-    /**
-     * Endpoint để handle khi user cancel payment (optional)
-     */
     @PostMapping("/cancel/{orderId}")
+    @Transactional
     public ResponseEntity<?> cancelPayment(@PathVariable Long orderId) {
         try {
-            Order order = orderRepository.findById(orderId)
-                    .orElseThrow(() -> new RuntimeException("Order not found"));
+            Order order = requireAccessibleOrder(orderId);
 
             if (order.getPaymentStatus() == PaymentStatus.PENDING_PAYMENT) {
                 order.setPaymentStatus(PaymentStatus.CANCELLED);
                 order.setStatus("CANCELLED");
                 orderRepository.save(order);
-
                 return ResponseEntity.ok(new MessageResponse("Payment cancelled"));
-            } else {
-                return ResponseEntity.badRequest().body(new MessageResponse("Cannot cancel this order"));
             }
+
+            return ResponseEntity.badRequest().body(new MessageResponse("Cannot cancel this order"));
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: " + e.getMessage()));
+            log.error("Error cancelling payment for order {}", orderId, e);
+            return ResponseEntity.badRequest().body(new MessageResponse("Error cancelling payment"));
         }
+    }
+
+    private Order requireAccessibleOrder(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        UserDetailsImpl currentUser = getAuthenticatedUser();
+        boolean isAdmin = currentUser.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals(ERole.ROLE_ADMIN.name()));
+
+        if (!isAdmin && !order.getUser().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("Error: You are not authorized to access this order.");
+        }
+
+        return order;
+    }
+
+    private UserDetailsImpl getAuthenticatedUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Object principal = authentication != null ? authentication.getPrincipal() : null;
+        if (!(principal instanceof UserDetailsImpl userDetails)) {
+            throw new AccessDeniedException("Authentication required");
+        }
+        return userDetails;
     }
 }

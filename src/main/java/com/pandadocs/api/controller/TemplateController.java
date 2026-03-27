@@ -346,16 +346,7 @@ public class TemplateController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional
-    public ResponseEntity<?> deleteTemplate(@PathVariable Long id) {
-        logger.info("DELETE TEMPLATE ENDPOINT CALLED - ID: {}", id);
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null) {
-            logger.info("Current user: {}", authentication.getName());
-            logger.info("Authorities: {}", authentication.getAuthorities());
-        } else {
-            logger.warn("NO AUTHENTICATION FOUND!");
-        }
+    public ResponseEntity<?> deleteTemplate(@PathVariable Long id) {        logger.info("Delete template request received for template {}", id);
 
         return templateRepository.findById(id).map(template -> {
             // Only published templates can be deleted through this endpoint.
@@ -485,13 +476,6 @@ public class TemplateController {
         try {
             FirebaseStorageService.FileInfo fileInfo = firebaseStorageService.getFileInfo(template.getFileUrl());
 
-            logger.debug("=== DOWNLOAD DEBUG ===");
-            logger.debug("Template ID: {}", id);
-            logger.debug("File URL: {}", template.getFileUrl());
-            logger.debug("Extracted filename: {}", fileInfo.getFilename());
-            logger.debug("Content-Type: {}", fileInfo.getContentType());
-            logger.debug("======================");
-
             byte[] fileContent = firebaseStorageService.downloadFile(template.getFileUrl());
 
             // Encode the filename for Content-Disposition headers.
@@ -505,17 +489,12 @@ public class TemplateController {
                 encodedFilename
             );
 
-            logger.debug("Encoded filename: {}", encodedFilename);
-            logger.debug("Content-Disposition: {}", contentDisposition);
-
             ByteArrayResource resource = new ByteArrayResource(fileContent);
 
             HttpHeaders headers = new HttpHeaders();
             headers.add(HttpHeaders.CONTENT_DISPOSITION, contentDisposition);
             headers.setContentType(MediaType.parseMediaType(fileInfo.getContentType()));
             headers.setContentLength(fileContent.length);
-
-            logger.debug("Content-Length: {}", fileContent.length);
 
             return ResponseEntity.ok()
                     .headers(headers)
@@ -577,3 +556,6 @@ public class TemplateController {
     }
 
 }
+
+
+

@@ -22,22 +22,26 @@ if ($trackedFiles.Count -eq 0) {
     throw "No tracked files found. Run this inside the public git repo."
 }
 
+$filesToScan = $trackedFiles |
+    Where-Object { $_ -ne 'scripts/preflight-public-check.ps1' } |
+    Where-Object { Test-Path $_ }
+
 $forbiddenFiles = @(
-    "^\\.env$",
-    "^\\.env\\.",
-    "^secrets/",
-    "firebase-service-account.*\\.json$",
-    "application\\.properties\\.backup$",
-    "pom\\.xml\\.backup$",
-    "\\.(pem|p12|jks|keystore)$"
+    '^\.env$',
+    '^\.env\.(?!example$)',
+    '^secrets/',
+    'firebase-service-account.*\.json$',
+    'application\.properties\.backup$',
+    'pom\.xml\.backup$',
+    '\.(pem|p12|jks|keystore)$'
 )
 
 $contentPatterns = @(
-    "AIza[0-9A-Za-z_-]{20,}",
-    "GOCSPX-[0-9A-Za-z_-]{10,}",
-    "AKIA[0-9A-Z]{16}",
-    "-----BEGIN [A-Z ]*PRIVATE KEY-----",
-    "eyJhbGciOiJIUzI1Ni"
+    'AIza[0-9A-Za-z_-]{20,}',
+    'GOCSPX-[0-9A-Za-z_-]{10,}',
+    'AKIA[0-9A-Z]{16}',
+    '-----BEGIN [A-Z ]*PRIVATE KEY-----',
+    'eyJhbGciOiJIUzI1Ni'
 )
 
 $findings = @()
@@ -51,17 +55,17 @@ foreach ($file in $trackedFiles) {
 }
 
 foreach ($pattern in $contentPatterns) {
-    $matches = & rg --line-number --with-filename --glob "!*.md" --glob "!*.example" --glob "!*.txt" --glob "!docs/**" -e $pattern -- $trackedFiles 2>$null
+    $matches = & rg --line-number --with-filename --glob '!*.md' --glob '!*.example' --glob '!*.txt' --glob '!docs/**' -e $pattern -- $filesToScan 2>$null
     if ($LASTEXITCODE -eq 0 -and $matches) {
         $findings += $matches
     }
 }
 
 if ($findings.Count -gt 0) {
-    Write-Host "Public release check failed. Review these findings:" -ForegroundColor Red
+    Write-Host 'Public release check failed. Review these findings:' -ForegroundColor Red
     $findings | Sort-Object -Unique | ForEach-Object { Write-Host " - $_" }
     exit 1
 }
 
-Write-Host "Public release check passed." -ForegroundColor Green
-Write-Host "No forbidden tracked files or high-signal secret patterns were found."
+Write-Host 'Public release check passed.' -ForegroundColor Green
+Write-Host 'No forbidden tracked files or high-signal secret patterns were found.'

@@ -1,12 +1,14 @@
 package com.pandadocs.api.config;
 
+import jakarta.annotation.PostConstruct;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-import jakarta.annotation.PostConstruct;
 
 @Configuration
 @Getter
+@Slf4j
 public class GeminiConfig {
 
     @Value("${gemini.api.key}")
@@ -21,14 +23,12 @@ public class GeminiConfig {
     @Value("${gemini.api.timeout}")
     private int timeout;
 
-    // Chat rate limiting configuration
     @Value("${chat.rate-limit.messages-per-hour}")
     private int messagesPerHour;
 
     @Value("${chat.rate-limit.messages-per-day}")
     private int messagesPerDay;
 
-    // Chat session configuration
     @Value("${chat.session.timeout-minutes}")
     private int sessionTimeoutMinutes;
 
@@ -44,10 +44,10 @@ public class GeminiConfig {
         if (model != null) model = model.trim();
         if (baseUrl != null) baseUrl = baseUrl.trim();
 
-        // Log configuration (without exposing API key)
-        System.out.println("Gemini Config initialized:");
-        System.out.println("  Model: " + model);
-        System.out.println("  Rate limit: " + messagesPerHour + "/hour, " + messagesPerDay + "/day");
-        System.out.println("  Session timeout: " + sessionTimeoutMinutes + " minutes");
+        log.info(
+                "Gemini chat configuration initialized with model {} and session timeout {} minutes",
+                model,
+                sessionTimeoutMinutes
+        );
     }
 }

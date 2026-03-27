@@ -1,9 +1,8 @@
 package com.pandadocs.api.security.oauth2;
 
-import com.pandadocs.api.security.jwt.JwtUtils;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,8 +11,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.util.UriUtils;
 
-import java.io.IOException;
+import com.pandadocs.api.security.jwt.JwtUtils;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
@@ -29,33 +33,16 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException, ServletException {
-
-        logger.info("=== OAuth2 Login Success Handler called ===");
-
-        // Get OAuth2 user principal
         OAuth2UserPrincipal oAuth2UserPrincipal = (OAuth2UserPrincipal) authentication.getPrincipal();
-
-        logger.info("User authenticated: {}, email: {}",
-            oAuth2UserPrincipal.getUsername(),
-            oAuth2UserPrincipal.getEmail());
-
-        // Generate JWT token
         String jwt = jwtUtils.generateTokenFromUsername(oAuth2UserPrincipal.getUsername());
-        logger.info("JWT token generated for user: {}", oAuth2UserPrincipal.getUsername());
-
-        // Redirect to frontend with JWT token in URL
+        String fragment = "token=" + UriUtils.encode(jwt, StandardCharsets.UTF_8);
         String targetUrl = UriComponentsBuilder.fromUriString(frontendRedirectUrl)
-                .queryParam("token", jwt)
-                .queryParam("username", oAuth2UserPrincipal.getUsername())
-                .queryParam("email", oAuth2UserPrincipal.getEmail())
+                .fragment(fragment)
                 .build()
                 .toUriString();
 
-        logger.info("Redirecting to frontend: {}", targetUrl);
-
+        logger.info("OAuth2 login successful for user {}", oAuth2UserPrincipal.getUsername());
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
-
-        // Clean up security context after successful authentication
         clearAuthenticationAttributes(request);
     }
 }
