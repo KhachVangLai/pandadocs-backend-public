@@ -12,18 +12,15 @@ import com.pandadocs.api.model.User;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-  // Tìm user theo username
   Optional<User> findByUsername(String username);
 
-  // Kiểm tra sự tồn tại của username
   Boolean existsByUsername(String username);
 
-  // Kiểm tra sự tồn tại của email
   Boolean existsByEmail(String email);
 
-  Optional<User> findByEmail(String email); // <-- Thêm hàm này
+  Optional<User> findByEmail(String email);
 
-  Optional<User> findByResetPasswordToken(String token); // <-- Thêm hàm này
+  Optional<User> findByResetPasswordToken(String token);
 
   Optional<User> findByVerificationToken(String token);
 

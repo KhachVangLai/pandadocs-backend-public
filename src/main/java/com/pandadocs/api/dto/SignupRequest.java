@@ -22,6 +22,6 @@ public class SignupRequest {
     @ValidPassword
     private String password;
 
-    // role có thể không cần gửi lên, sẽ gán mặc định là USER
+    // Optional; defaults to USER when omitted.
     private Set<String> role;
 }

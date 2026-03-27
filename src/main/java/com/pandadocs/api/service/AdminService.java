@@ -30,7 +30,6 @@ public class AdminService {
         long totalDownloads = downloadRepository.countByTimestampAfter(last30Days);
         long dailyUsers = userRepository.countByCreatedAtAfter(last24Hours);
 
-        // Đếm templates theo từng status
         long pendingTemplates = templateRepository.countByStatus(TemplateStatus.PENDING_REVIEW);
         long approvedTemplates = templateRepository.countByStatus(TemplateStatus.APPROVED);
         long publishedTemplates = templateRepository.countByStatus(TemplateStatus.PUBLISHED);
@@ -38,12 +37,11 @@ public class AdminService {
 
         AdminDashboardDTO dto = new AdminDashboardDTO();
         dto.setMonthlyRevenue(monthlyRevenue);
-        dto.setRewardCosts(0.0); // No payout system - always 0
+        dto.setRewardCosts(0.0);
         dto.setTotalTemplates(totalTemplates);
         dto.setTotalDownloads(totalDownloads);
         dto.setDailyUsers(dailyUsers);
 
-        // Set template statistics by status
         dto.setPendingTemplates(pendingTemplates);
         dto.setApprovedTemplates(approvedTemplates);
         dto.setPublishedTemplates(publishedTemplates);

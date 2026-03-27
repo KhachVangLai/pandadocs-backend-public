@@ -21,16 +21,13 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     @Query("SELECT r FROM Review r LEFT JOIN FETCH r.user LEFT JOIN FETCH r.template WHERE r.user.id = :userId")
     List<Review> findUserReviews(@Param("userId") Long userId);
 
-    // Xóa tất cả reviews của một template
     @Modifying
     @Transactional
     void deleteByTemplateId(Long templateId);
 
-    // Tính average rating của một template
     @Query("SELECT AVG(r.rating) FROM Review r WHERE r.template.id = :templateId")
     Double calculateAverageRating(@Param("templateId") Long templateId);
 
-    // Đếm số lượng reviews của một template
     @Query("SELECT COUNT(r) FROM Review r WHERE r.template.id = :templateId")
     Long countByTemplateId(@Param("templateId") Long templateId);
 }

@@ -1,8 +1,8 @@
 package com.pandadocs.api.model;
 
 public enum PaymentStatus {
-    PENDING_PAYMENT,    // Đang chờ user thanh toán
-    PAID,               // Đã thanh toán thành công
-    FAILED,             // Thanh toán thất bại
-    CANCELLED           // User hủy thanh toán
+    PENDING_PAYMENT,    // Waiting for the user to pay.
+    PAID,               // Payment completed successfully.
+    FAILED,             // Payment failed.
+    CANCELLED           // Payment was canceled by the user.
 }

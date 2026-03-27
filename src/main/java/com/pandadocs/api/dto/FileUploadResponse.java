@@ -22,7 +22,6 @@ public class FileUploadResponse {
         this.message = message;
     }
 
-    // Getters and Setters
     public String getFileUrl() {
         return fileUrl;
     }

@@ -25,7 +25,6 @@ public class ActivityService {
     public List<ActivityDTO> getUserActivity(Long userId) {
         List<ActivityDTO> activities = new ArrayList<>();
 
-        // Lấy lịch sử mua hàng
         orderRepository.findUserOrders(userId).forEach(order -> { 
             order.getOrderItems().forEach(item -> {
                 activities.add(new ActivityDTO(
@@ -36,7 +35,6 @@ public class ActivityService {
             });
         });
 
-        // Lấy lịch sử review
         reviewRepository.findUserReviews(userId).forEach(review -> { 
             activities.add(new ActivityDTO(
                 "REVIEW",
@@ -45,7 +43,6 @@ public class ActivityService {
             ));
         });
 
-        // Lấy lịch sử download
         downloadRepository.findUserDownloads(userId).forEach(download -> {
             activities.add(new ActivityDTO(
                 "DOWNLOAD",
@@ -54,7 +51,6 @@ public class ActivityService {
             ));
         });
 
-        // Sắp xếp theo thời gian mới nhất lên đầu
         return activities.stream()
                 .sorted(Comparator.comparing(ActivityDTO::getTimestamp).reversed())
                 .collect(Collectors.toList());

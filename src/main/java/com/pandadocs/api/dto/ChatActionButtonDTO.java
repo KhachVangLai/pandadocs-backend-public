@@ -12,25 +12,17 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class ChatActionButtonDTO {
-    /**
-     * Type of action
-     */
     private ActionType type;
 
-    /**
-     * Button label text (e.g., "Mua ngay", "Thêm vào library")
-     */
+    // Label shown to the user.
     private String label;
 
-    /**
-     * Template ID for this action
-     */
     private Long templateId;
 
     public enum ActionType {
-        BUY_NOW,        // Mua template
-        ADD_TO_LIBRARY, // Thêm miễn phí vào library
-        VIEW_DETAILS,   // Xem chi tiết template
-        CANCEL          // Hủy
+        BUY_NOW,
+        ADD_TO_LIBRARY,
+        VIEW_DETAILS,
+        CANCEL
     }
 }

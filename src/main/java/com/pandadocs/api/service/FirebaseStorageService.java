@@ -41,26 +41,22 @@ public class FirebaseStorageService {
         }
     }
 
-    // ==================== UPLOAD METHODS ====================
-
     /**
      * Upload template file (docx, pdf, pptx, etc.)
      * Path: templates/user{userId}_{timestamp}_{filename}
      */
     public String uploadTemplate(MultipartFile file, Long userId) throws IOException {
-        validateFile(file, 50 * 1024 * 1024, // 50MB max
-                new String[] { "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
-                        "application/pdf", // .pdf
-                        "application/vnd.openxmlformats-officedocument.presentationml.presentation", // .pptx
-                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" // .xlsx
+        validateFile(file, 50 * 1024 * 1024,
+                new String[] { "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        "application/pdf",
+                        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 });
 
         String fileName = generateFileName("templates", userId, file.getOriginalFilename());
-
-        // Detect content type from file extension to ensure correct type
         String contentType = detectContentType(file.getOriginalFilename());
 
-        return uploadFileWithContentType(file, fileName, contentType, false); // private file
+        return uploadFileWithContentType(file, fileName, contentType, false);
     }
 
     /**
@@ -69,14 +65,13 @@ public class FirebaseStorageService {
      * Auto resize to 300x300px
      */
     public String uploadAvatar(MultipartFile file, Long userId) throws IOException {
-        validateFile(file, 5 * 1024 * 1024, // 5MB max
+        validateFile(file, 5 * 1024 * 1024,
                 new String[] { "image/jpeg", "image/png", "image/jpg" });
 
-        // Resize image to 300x300
         byte[] resizedImage = resizeImage(file.getInputStream(), 300, 300);
 
         String fileName = "avatars/user" + userId + ".jpg";
-        return uploadFile(resizedImage, fileName, "image/jpeg", true); // public file
+        return uploadFile(resizedImage, fileName, "image/jpeg", true);
     }
 
     /**
@@ -92,20 +87,17 @@ public class FirebaseStorageService {
         List<String> urls = new ArrayList<>();
         for (int i = 0; i < files.size(); i++) {
             MultipartFile file = files.get(i);
-            validateFile(file, 5 * 1024 * 1024, // 5MB max
+            validateFile(file, 5 * 1024 * 1024,
                     new String[] { "image/jpeg", "image/png", "image/jpg" });
 
-            // Resize to 1200x800
             byte[] resizedImage = resizeImage(file.getInputStream(), 1200, 800);
 
             String fileName = "previews/template" + templateId + "_" + (i + 1) + ".jpg";
-            String url = uploadFile(resizedImage, fileName, "image/jpeg", true); // public file
+            String url = uploadFile(resizedImage, fileName, "image/jpeg", true);
             urls.add(url);
         }
         return urls;
     }
-
-    // ==================== DOWNLOAD METHODS ====================
 
     /**
      * Generate signed URL for private files (templates)
@@ -113,7 +105,6 @@ public class FirebaseStorageService {
      */
     public String generateSignedUrl(String fileUrl) {
         try {
-            // Extract file path from full URL
             String filePath = extractPathFromUrl(fileUrl);
 
             BlobId blobId = BlobId.of(bucketName, filePath);
@@ -123,7 +114,6 @@ public class FirebaseStorageService {
                 throw new RuntimeException("File not found: " + filePath);
             }
 
-            // Generate signed URL valid for 1 hour
             return blob.signUrl(1, TimeUnit.HOURS).toString();
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate signed URL: " + e.getMessage());
@@ -157,13 +147,12 @@ public class FirebaseStorageService {
             throw new RuntimeException("File not found: " + filePath);
         }
 
-        // Extract original filename from path
         String filename = filePath.substring(filePath.lastIndexOf("/") + 1);
-        // Remove timestamp prefix (e.g., user123_1234567890_resume.docx -> resume.docx)
+        // Strip the generated user/timestamp prefix from uploaded template names.
         if (filename.contains("_")) {
             String[] parts = filename.split("_", 3);
             if (parts.length == 3) {
-                filename = parts[2]; // Get original filename
+                filename = parts[2];
             }
         }
 
@@ -191,8 +180,6 @@ public class FirebaseStorageService {
         }
     }
 
-    // ==================== DELETE METHODS ====================
-
     /**
      * Delete file from Firebase Storage
      */
@@ -212,7 +199,7 @@ public class FirebaseStorageService {
     public void deleteOldAvatar(Long userId) {
         String fileName = "avatars/user" + userId + ".jpg";
         BlobId blobId = BlobId.of(bucketName, fileName);
-        storage.delete(blobId); // Ignore if not exists
+        storage.delete(blobId);
     }
 
     /**
@@ -222,11 +209,9 @@ public class FirebaseStorageService {
         for (int i = 1; i <= 5; i++) {
             String fileName = "previews/template" + templateId + "_" + i + ".jpg";
             BlobId blobId = BlobId.of(bucketName, fileName);
-            storage.delete(blobId); // Ignore if not exists
+            storage.delete(blobId);
         }
     }
-
-    // ==================== HELPER METHODS ====================
 
     /**
      * Detect content type from file extension
@@ -271,17 +256,14 @@ public class FirebaseStorageService {
         BlobInfo.Builder blobInfoBuilder = BlobInfo.newBuilder(blobId)
                 .setContentType(contentType);
 
-        // Set metadata for public access
         if (isPublic) {
             blobInfoBuilder.setContentDisposition("inline");
         }
 
         BlobInfo blobInfo = blobInfoBuilder.build();
 
-        // Upload
         storage.create(blobInfo, file.getBytes());
 
-        // Return public URL
         return getPublicUrl(fileName);
     }
 
@@ -310,10 +292,8 @@ public class FirebaseStorageService {
 
         BlobInfo blobInfo = blobInfoBuilder.build();
 
-        // Upload
         storage.create(blobInfo, data);
 
-        // Return public URL
         return getPublicUrl(fileName);
     }
 

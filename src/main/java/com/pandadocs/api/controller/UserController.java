@@ -3,7 +3,7 @@ package com.pandadocs.api.controller;
 import com.pandadocs.api.dto.LibraryItemDTO;
 import com.pandadocs.api.model.Library;
 import com.pandadocs.api.model.User;
-import com.pandadocs.api.repository.UserRepository; // <-- Thêm import này
+import com.pandadocs.api.repository.UserRepository;
 import com.pandadocs.api.repository.LibraryRepository;
 import com.pandadocs.api.security.services.UserDetailsImpl;
 import com.pandadocs.api.service.FirebaseStorageService;
@@ -28,8 +28,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.access.prepost.PreAuthorize;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
+@CrossOrigin(origins = "*", maxAge = 3600)
 @RequestMapping("/api/users")
 public class UserController {
 
@@ -66,26 +66,20 @@ public class UserController {
         return ResponseEntity.ok(dto);
     }
 
-
-    // API lấy "thư viện" hoặc "lịch sử mua hàng" của user đang đăng nhập
     @GetMapping("/me/purchases")
     @PreAuthorize("hasRole('USER')")
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public ResponseEntity<List<LibraryItemDTO>> getCurrentUserPurchases() {
-        // Lấy thông tin user đang đăng nhập
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         Long currentUserId = userDetails.getId();
 
-        // Tìm các mục trong thư viện của user (eager load template details)
         List<Library> libraryItems = libraryRepository.findByUserIdWithTemplateDetails(currentUserId);
 
-        // Chuyển đổi sang DTO để trả về
         List<LibraryItemDTO> dtos = libraryItems.stream().map(item -> {
             LibraryItemDTO dto = new LibraryItemDTO();
             dto.setLibraryId(item.getId());
             dto.setAcquiredAt(item.getAcquiredAt());
-            // Dùng service đã có để chuyển đổi Template lồng bên trong
             dto.setTemplate(templateService.convertToDto(item.getTemplate()));
             return dto;
         }).collect(Collectors.toList());
@@ -99,26 +93,22 @@ public class UserController {
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "avatarFile", required = false) MultipartFile avatarFile) {
 
-        // 1. Lấy thông tin user hiện tại
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         User currentUser = userRepository.findById(userDetails.getId())
                 .orElseThrow(() -> new RuntimeException("Error: User not found"));
 
-        // 2. Cập nhật 'name' nếu được cung cấp
         if (name != null && !name.isEmpty()) {
             currentUser.setName(name);
         }
 
-        // 3. Xử lý upload avatar nếu có file
         if (avatarFile != null && !avatarFile.isEmpty()) {
             try {
-                // Delete old avatar if exists
+                // Remove the previous avatar to avoid leaving orphaned files in storage.
                 if (currentUser.getAvatar() != null && !currentUser.getAvatar().isEmpty()) {
                     firebaseStorageService.deleteOldAvatar(currentUser.getId());
                 }
 
-                // Upload new avatar to Firebase Storage (auto resize to 300x300)
                 String avatarUrl = firebaseStorageService.uploadAvatar(avatarFile, currentUser.getId());
                 currentUser.setAvatar(avatarUrl);
             } catch (Exception e) {

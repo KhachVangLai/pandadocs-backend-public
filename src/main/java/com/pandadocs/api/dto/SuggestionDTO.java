@@ -14,5 +14,5 @@ public class SuggestionDTO {
     private String response;
     private Instant createdAt;
     private Instant respondedAt;
-    private String username; // Username của người gửi
+    private String username; // Username of the submitting user.
 }

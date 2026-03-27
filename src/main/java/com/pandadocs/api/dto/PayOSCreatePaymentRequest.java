@@ -10,17 +10,17 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PayOSCreatePaymentRequest {
-    private Long orderCode;          // Mã đơn hàng unique
-    private Integer amount;          // Số tiền (VND)
-    private String description;      // Mô tả đơn hàng
-    private String buyerName;        // Tên người mua (optional)
-    private String buyerEmail;       // Email người mua (optional)
-    private String buyerPhone;       // SĐT người mua (optional)
-    private String buyerAddress;     // Địa chỉ (optional)
-    private String returnUrl;        // URL redirect sau khi thanh toán thành công
-    private String cancelUrl;        // URL redirect khi user hủy thanh toán
-    private List<Item> items;        // Danh sách items
-    private String signature;        // Chữ ký để verify request
+    private Long orderCode;          // Unique order code.
+    private Integer amount;          // Payment amount in VND.
+    private String description;      // Order description.
+    private String buyerName;        // Optional buyer name.
+    private String buyerEmail;       // Optional buyer email.
+    private String buyerPhone;       // Optional buyer phone number.
+    private String buyerAddress;     // Optional buyer address.
+    private String returnUrl;        // Redirect URL after successful payment.
+    private String cancelUrl;        // Redirect URL after the user cancels payment.
+    private List<Item> items;        // Line items included in the payment.
+    private String signature;        // Signature used to verify the request.
 
     @Data
     @NoArgsConstructor

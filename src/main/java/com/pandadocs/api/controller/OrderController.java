@@ -11,14 +11,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.stream.Collectors;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
-@RequestMapping("/api/orders") // Đổi tên từ purchases sang orders cho đúng chuẩn RESTful
+@CrossOrigin(origins = "*", maxAge = 3600)
+@RequestMapping("/api/orders")
 public class OrderController {
 
     @Autowired
@@ -35,17 +36,16 @@ public class OrderController {
         Order order = orderRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Order not found"));
 
-        // Bảo mật: Đảm bảo user chỉ có thể xem order của chính mình (hoặc admin)
+        // Restrict access to the order owner or an admin.
         boolean isAdmin = userDetails.getAuthorities().stream()
             .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
         if (!order.getUser().getId().equals(currentUserId) && !isAdmin) {
-            return ResponseEntity.status(403).build(); // Forbidden
+            return ResponseEntity.status(403).build();
         }
 
         return ResponseEntity.ok(convertToDto(order));
     }
     
-    // Hàm helper để convert
     private OrderDTO convertToDto(Order order) {
         OrderDTO dto = new OrderDTO();
         dto.setId(order.getId());

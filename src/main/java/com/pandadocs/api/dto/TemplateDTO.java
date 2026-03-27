@@ -13,10 +13,10 @@ public class TemplateDTO {
     private String description;
     private Double price;
     private String fileUrl;
-    private TemplateStatus status;  // Trạng thái của template
+    private TemplateStatus status;
     private CategoryDTO category;
     private AuthorDTO author;
-    private float rating; // Thêm trường rating
-    private int reviewCount; // Thêm trường reviewCount
-    private List<String> previewImages; // Preview images URLs
+    private float rating;
+    private int reviewCount;
+    private List<String> previewImages;
 }

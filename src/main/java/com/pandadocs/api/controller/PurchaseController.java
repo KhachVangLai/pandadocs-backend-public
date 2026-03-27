@@ -38,8 +38,8 @@ import org.slf4j.LoggerFactory;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
 import vn.payos.model.v2.paymentRequests.PaymentLinkItem;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
+@CrossOrigin(origins = "*", maxAge = 3600)
 @RequestMapping("/api")
 public class PurchaseController {
 
@@ -70,32 +70,27 @@ public class PurchaseController {
     @Transactional
     public ResponseEntity<?> createPurchase(@RequestBody PurchaseRequest purchaseRequest) {
         try {
-            // 1. Lấy thông tin user đang đăng nhập
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             User currentUser = userRepository.findByIdWithRoles(userDetails.getId())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // 2. Tìm template mà user muốn mua
             Template templateToPurchase = templateRepository.findById(purchaseRequest.getTemplateId())
                     .orElseThrow(() -> new EntityNotFoundException("Template not found"));
 
-            // 3. Kiểm tra user đã sở hữu template chưa
             boolean alreadyOwned = libraryRepository.existsByUserAndTemplate(currentUser, templateToPurchase);
             if (alreadyOwned) {
                 return ResponseEntity.badRequest().body(new MessageResponse("Error: You already own this template."));
             }
 
-            // 4. Kiểm tra nếu template FREE (price = 0 hoặc null)
+            // Free templates are granted immediately without creating a payment link.
             if (templateToPurchase.getPrice() == null || templateToPurchase.getPrice() == 0) {
-                // Template FREE - Thêm trực tiếp vào library
                 Library library = new Library();
                 library.setUser(currentUser);
                 library.setTemplate(templateToPurchase);
                 library.setAcquiredAt(Instant.now());
                 libraryRepository.save(library);
 
-                // Tạo order với status COMPLETED cho FREE template
                 Order order = new Order();
                 order.setUser(currentUser);
                 order.setCreatedAt(Instant.now());
@@ -112,13 +107,12 @@ public class PurchaseController {
 
                 PurchaseResponse response = new PurchaseResponse(
                     order.getId(),
-                    null, // No payment URL for free templates
+                    null,
                     "Template miễn phí đã được thêm vào thư viện của bạn"
                 );
                 return ResponseEntity.ok(response);
             }
 
-            // 5. Template có phí - Tạo Order với status PENDING_PAYMENT
             Order order = new Order();
             order.setUser(currentUser);
             order.setCreatedAt(Instant.now());
@@ -132,11 +126,9 @@ public class PurchaseController {
             orderItem.setPrice(templateToPurchase.getPrice());
             order.getOrderItems().add(orderItem);
 
-            // 6. Lưu Order trước để có ID
             order = orderRepository.save(order);
 
-            // 7. Tạo PayOS payment request
-            // PayOS chỉ cho phép description tối đa 25 ký tự
+            // PayOS limits payment descriptions to 25 characters.
             String templateTitle = templateToPurchase.getTitle();
             String description;
             if (templateTitle.length() <= 22) {
@@ -153,7 +145,6 @@ public class PurchaseController {
                     .price(templateToPurchase.getPrice().longValue())
                     .build();
 
-            // 8. Gọi PayOS API để tạo payment link
             CreatePaymentLinkResponse paymentResponse = payOSService.createPaymentLink(
                     order.getId(),
                     templateToPurchase.getPrice().longValue(),
@@ -163,13 +154,11 @@ public class PurchaseController {
                     returnUrl
             );
 
-            // 9. Cập nhật Order với payment info
             if (paymentResponse != null) {
                 order.setPaymentId(paymentResponse.getPaymentLinkId());
                 order.setPaymentUrl(paymentResponse.getCheckoutUrl());
                 orderRepository.save(order);
 
-                // 10. Trả về payment URL cho frontend
                 PurchaseResponse response = new PurchaseResponse(
                     order.getId(),
                     paymentResponse.getCheckoutUrl(),
@@ -177,13 +166,12 @@ public class PurchaseController {
                 );
                 return ResponseEntity.ok(response);
             } else {
-                // Rollback order nếu tạo payment link thất bại
                 orderRepository.delete(order);
                 return ResponseEntity.badRequest().body(new MessageResponse("Error: Failed to create payment link"));
             }
 
         } catch (Exception e) {
-            e.printStackTrace(); // Print full stack trace to console
+            e.printStackTrace();
             String errorMsg = e.getMessage();
             if (e.getCause() != null) {
                 errorMsg += " | Cause: " + e.getCause().getMessage();

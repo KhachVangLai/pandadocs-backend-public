@@ -59,8 +59,8 @@ import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
+@CrossOrigin(origins = "*", maxAge = 3600)
 @RequestMapping("/api/admin")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
@@ -74,16 +74,16 @@ public class AdminController {
     private ActivityService activityService;
 
     @Autowired
-    private TemplateRepository templateRepository; // Thêm import này
+    private TemplateRepository templateRepository;
 
     @Autowired
-    private TemplateService templateService; // Thêm import này
+    private TemplateService templateService;
 
     @Autowired
     private AdminService adminService;
 
     @Autowired
-    private NotificationRepository notificationRepository; // <-- Thêm dòng này
+    private NotificationRepository notificationRepository;
 
     @Autowired
     private SuggestionRepository suggestionRepository;
@@ -97,7 +97,6 @@ public class AdminController {
     @Autowired
     private SellerProfileRepository sellerProfileRepository;
 
-    // API lấy danh sách tất cả user
     @GetMapping("/users")
     public ResponseEntity<Page<UserDTO>> getAllUsers(Pageable pageable) {
         Page<User> userPage = userRepository.findAllWithRoles(pageable);
@@ -105,8 +104,6 @@ public class AdminController {
         return ResponseEntity.ok(userDtoPage);
     }
 
-    // --- API MỚI ---
-    // API lấy chi tiết một user
     @GetMapping("/users/{id}")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
         User user = userRepository.findByIdWithRoles(id)
@@ -114,8 +111,6 @@ public class AdminController {
         return ResponseEntity.ok(convertToDto(user));
     }
 
-    // --- API MỚI ---
-    // API cập nhật thông tin user (Admin có thể sửa tên, email...)
     @PutMapping("/users/{id}")
     public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody UserDTO userDetails) {
         User user = userRepository.findById(id)
@@ -123,13 +118,10 @@ public class AdminController {
 
         user.setName(userDetails.getName());
         user.setEmail(userDetails.getEmail());
-        // Thêm logic cập nhật role nếu cần
-
         User updatedUser = userRepository.save(user);
         return ResponseEntity.ok(convertToDto(updatedUser));
     }
 
-    // API cập nhật trạng thái user
     @PutMapping("/users/{id}/status")
     public ResponseEntity<?> updateUserStatus(@PathVariable Long id, @Valid @RequestBody UpdateStatusRequest request) {
         User user = userRepository.findById(id)
@@ -141,8 +133,6 @@ public class AdminController {
         return ResponseEntity.ok(new MessageResponse("User status updated successfully!"));
     }
 
-    // --- API MỚI ---
-    // API xóa user
     @DeleteMapping("/users/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         if (!userRepository.existsById(id)) {
@@ -152,7 +142,6 @@ public class AdminController {
         return ResponseEntity.ok(new MessageResponse("User deleted successfully!"));
     }
 
-    // Hàm helper để chuyển đổi User sang UserDTO
     private UserDTO convertToDto(User user) {
         UserDTO userDTO = new UserDTO();
         userDTO.setId(user.getId());
@@ -178,7 +167,6 @@ public class AdminController {
         return ResponseEntity.ok(activityService.getUserActivity(id));
     }
 
-    // API lấy TẤT CẢ templates (cho admin quản lý)
     @GetMapping("/templates")
     public ResponseEntity<Page<TemplateDTO>> getAllTemplates(
             @RequestParam(required = false) TemplateStatus status,
@@ -186,10 +174,8 @@ public class AdminController {
 
         Page<Template> templatePage;
         if (status != null) {
-            // Nếu có filter theo status
             templatePage = templateRepository.findByStatus(status, pageable);
         } else {
-            // Lấy tất cả templates với eager loading
             templatePage = templateRepository.findAllWithCategoryAndAuthor(pageable);
         }
 
@@ -197,18 +183,15 @@ public class AdminController {
         return ResponseEntity.ok(templateDtoPage);
     }
 
-    // API lấy danh sách các template đang chờ duyệt
     @GetMapping("/templates/pending")
     public ResponseEntity<List<TemplateDTO>> getPendingTemplates() {
-        List<Template> pending = templateRepository.findByStatus(TemplateStatus.PENDING_REVIEW); // Cần thêm hàm này vào
-                                                                                                 // Repo
+        List<Template> pending = templateRepository.findByStatus(TemplateStatus.PENDING_REVIEW);
         List<TemplateDTO> dtos = pending.stream()
                 .map(templateService::convertToDto)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }
 
-    // API để Admin thay đổi trạng thái của một template
     @PutMapping("/templates/{id}/status")
     @Transactional
     public ResponseEntity<?> updateTemplateStatus(@PathVariable Long id, @RequestParam TemplateStatus status) {
@@ -216,13 +199,11 @@ public class AdminController {
                 .orElseThrow(() -> new EntityNotFoundException("Template not found"));
 
         template.setStatus(status);
-        template.setUpdatedAt(Instant.now()); // <-- THÊM DÒNG NÀY
+        template.setUpdatedAt(Instant.now());
         templateRepository.save(template);
-        // --- THÊM LOGIC TẠO THÔNG BÁO ---
-        // Gửi thông báo cho tác giả của template
+
+        // Notify the template author when the review status changes.
         User author = template.getAuthor();
-        // Chỉ gửi thông báo nếu tác giả không phải là chính admin đang duyệt
-        // (Để tránh admin tự gửi thông báo cho chính mình)
         if (author != null) {
             String message = "Template '" + template.getTitle() + "' của bạn đã được cập nhật trạng thái thành "
                     + status.toString() + ".";
@@ -234,16 +215,10 @@ public class AdminController {
             notificationRepository.save(notification);
         }
 
-        // --- LOGIC MỚI: XỬ LÝ KHI TEMPLATE ĐƯỢC DUYỆT (PUBLISHED) ---
+        // Publishing is the hook for seller payout processing.
         if (status == TemplateStatus.PUBLISHED) {
-            // Nếu template được duyệt, và tác giả là SELLER,
-            // cần ghi nhận một khoản thanh toán (payout) cho seller.
-            // Đây là nơi bạn sẽ tích hợp logic để chuyển tiền cho seller
-            // hoặc ghi nhận công nợ để thanh toán định kỳ.
-            // Ví dụ: payoutService.recordPayoutForSeller(template.getAuthor(), template.getPrice());
             logger.info("Admin approved template '{}'. Consider payout for seller {}", template.getTitle(), template.getAuthor().getUsername());
         }
-        // -----------------------------
 
         return ResponseEntity.ok(new MessageResponse("Template status updated to " + status));
     }
@@ -253,13 +228,11 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getDashboardStats());
     }
 
-    // Lấy danh sách tất cả góp ý
     @GetMapping("/suggestions")
     @Transactional(readOnly = true)
     public ResponseEntity<List<SuggestionDTO>> getAllSuggestions() {
         List<Suggestion> suggestions = suggestionRepository.findAll();
 
-        // Chuyển đổi sang DTO
         List<SuggestionDTO> dtos = suggestions.stream().map(suggestion -> {
             SuggestionDTO dto = new SuggestionDTO();
             dto.setId(suggestion.getId());
@@ -275,7 +248,6 @@ public class AdminController {
         return ResponseEntity.ok(dtos);
     }
 
-    // Phản hồi một góp ý
     @PostMapping("/suggestions/{id}/respond")
     public ResponseEntity<?> respondToSuggestion(@PathVariable Long id,
             @RequestBody SuggestionRequest responseRequest) {
@@ -316,22 +288,18 @@ public class AdminController {
         return ResponseEntity.ok(java.util.Map.of("period", period, "totalRevenue", revenue));
     }
 
-    // --- API MỚI ---
     @PostMapping("/notifications/send")
     public ResponseEntity<?> sendNotification(@RequestBody SendNotificationRequest request) {
         List<User> recipients = new ArrayList<>();
 
         if (request.isSendToAll()) {
-            // Nếu gửi cho tất cả, lấy toàn bộ user
             recipients = userRepository.findAll();
         } else if (request.getRecipientIds() != null && !request.getRecipientIds().isEmpty()) {
-            // Nếu có danh sách ID, chỉ lấy các user đó
             recipients = userRepository.findAllById(request.getRecipientIds());
         } else {
             return ResponseEntity.badRequest().body(new MessageResponse("Error: Please provide recipients or set sendToAll to true."));
         }
 
-        // Tạo thông báo cho từng người nhận
         List<Notification> notifications = new ArrayList<>();
         for (User user : recipients) {
             Notification notification = new Notification();
@@ -341,17 +309,14 @@ public class AdminController {
             notifications.add(notification);
         }
 
-        // Lưu tất cả thông báo vào database
         notificationRepository.saveAll(notifications);
 
         return ResponseEntity.ok(new MessageResponse("Notification sent to " + recipients.size() + " user(s)."));
     }
 
-    // ========================================================================
-    // SELLER PAYOUT MANAGEMENT ENDPOINTS
-    // ========================================================================
+    // Seller payout management endpoints.
     /**
-     * Lấy danh sách tất cả seller payouts đang pending
+     * Return all seller payouts that are still pending.
      */
     @GetMapping("/payouts/pending")
     @Transactional(readOnly = true)
@@ -364,7 +329,7 @@ public class AdminController {
     }
 
     /**
-     * Lấy lịch sử tất cả payouts (đã trả và chưa trả)
+     * Return payout history for all sellers.
      */
     @GetMapping("/payouts/history")
     @Transactional(readOnly = true)
@@ -377,44 +342,38 @@ public class AdminController {
     }
 
     /**
-     * Tạo payout cho seller khi approve template
-     * Admin nhập số tiền đồng ý trả
+     * Create a payout record for a template approval.
      */
     @PostMapping("/payouts/template/{templateId}")
     public ResponseEntity<?> createPayoutForTemplate(
             @PathVariable Long templateId,
             @Valid @RequestBody CreatePayoutRequest request) {
 
-        // 1. Tìm template
         Template template = templateRepository.findById(templateId)
                 .orElseThrow(() -> new EntityNotFoundException("Template not found"));
 
-        // 2. Kiểm tra template đã có payout chưa
         if (sellerPayoutRepository.existsByTemplateId(templateId)) {
             return ResponseEntity.badRequest()
                     .body(new MessageResponse("Payout for this template already exists"));
         }
 
-        // 3. Kiểm tra author có phải seller không
         User seller = template.getAuthor();
         if (seller == null) {
             return ResponseEntity.badRequest()
                     .body(new MessageResponse("Template has no author"));
         }
 
-        // 4. Tạo SellerPayout record
         SellerPayout payout = new SellerPayout();
         payout.setTemplate(template);
         payout.setSeller(seller);
-        payout.setProposedPrice(template.getPrice()); // Giá seller đề xuất
-        payout.setAgreedPrice(request.getAgreedPrice()); // Giá admin đồng ý trả
+        payout.setProposedPrice(template.getPrice());
+        payout.setAgreedPrice(request.getAgreedPrice());
         payout.setStatus(PayoutStatus.PENDING);
         payout.setAdminNote(request.getAdminNote());
         payout.setCreatedAt(Instant.now());
 
         sellerPayoutRepository.save(payout);
 
-        // 5. Gửi notification cho seller
         String message = "Admin đã phê duyệt template '" + template.getTitle()
                 + "' của bạn và sẽ thanh toán " + request.getAgreedPrice() + " VND. "
                 + (request.getAdminNote() != null ? "Ghi chú: " + request.getAdminNote() : "");
@@ -429,27 +388,23 @@ public class AdminController {
     }
 
     /**
-     * Đánh dấu payout đã chuyển tiền (admin confirm đã chuyển khoản thủ công)
+     * Mark a payout as paid after the manual transfer is completed.
      */
     @PutMapping("/payouts/{payoutId}/mark-paid")
     @Transactional
     public ResponseEntity<?> markPayoutAsPaid(@PathVariable Long payoutId) {
-        // 1. Tìm payout
         SellerPayout payout = sellerPayoutRepository.findById(payoutId)
                 .orElseThrow(() -> new EntityNotFoundException("Payout not found"));
 
-        // 2. Kiểm tra status
         if (payout.getStatus() == PayoutStatus.PAID) {
             return ResponseEntity.badRequest()
                     .body(new MessageResponse("Payout already marked as paid"));
         }
 
-        // 3. Cập nhật status
         payout.setStatus(PayoutStatus.PAID);
         payout.setPaidAt(Instant.now());
         sellerPayoutRepository.save(payout);
 
-        // 4. Gửi notification cho seller
         String message = "Bạn đã nhận được thanh toán " + payout.getAgreedPrice()
                 + " VND cho template '" + payout.getTemplate().getTitle() + "'.";
 
@@ -463,7 +418,7 @@ public class AdminController {
     }
 
     /**
-     * Lấy thông tin chi tiết một payout
+     * Return a single payout by ID.
      */
     @GetMapping("/payouts/{payoutId}")
     @Transactional(readOnly = true)
@@ -484,7 +439,7 @@ public class AdminController {
         dto.setSellerId(payout.getSeller().getId());
         dto.setSellerUsername(payout.getSeller().getUsername());
 
-        // Lấy thông tin SellerProfile nếu có
+        // Include seller banking details when they are available.
         SellerProfile sellerProfile = sellerProfileRepository.findById(payout.getSeller().getId()).orElse(null);
         if (sellerProfile != null) {
             dto.setSellerBusinessName(sellerProfile.getBusinessName());

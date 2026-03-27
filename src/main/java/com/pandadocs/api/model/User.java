@@ -54,22 +54,19 @@ public class User {
 
   private Instant createdAt;
 
-  // ---- GOOGLE OAUTH2 ----
+  // Google OAuth2 fields
   @Column(unique = true)
   private String googleId; // Google user ID (sub)
-  // -----------------------
 
-  // ---- CÁC TRƯỜNG MỚI CHO TÍNH NĂNG RESET PASSWORD ----
+  // Password reset fields
   private String resetPasswordToken;
 
   private Instant resetPasswordTokenExpiry;
-  // ----------------------------------------------------
 
-  // ---- EMAIL VERIFICATION FIELDS ----
+  // Email verification fields
   private String verificationToken;
 
   private Instant verificationTokenExpiry;
-  // -----------------------------------
 
   public User(String username, String email, String password) {
     this.username = username;

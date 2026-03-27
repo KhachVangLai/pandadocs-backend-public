@@ -23,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,8 +31,8 @@ import java.util.stream.Collectors;
 
 import org.springframework.transaction.annotation.Transactional;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
+@CrossOrigin(origins = "*", maxAge = 3600)
 @RequestMapping("/api/sellers")
 public class SellerController {
 
@@ -62,7 +63,6 @@ public class SellerController {
         profile.setUser(currentUser);
         profile.setBusinessName(request.getBusinessName());
         profile.setDescription(request.getDescription());
-        // portfolioUrl removed
         sellerProfileRepository.save(profile);
 
         Role sellerRole = roleRepository.findByName(ERole.ROLE_SELLER)
@@ -74,7 +74,7 @@ public class SellerController {
     }
 
     /**
-     * Lấy thông tin seller profile (bao gồm bank info)
+     * Return the seller profile, including payout details.
      */
     @GetMapping("/profile")
     @PreAuthorize("hasRole('SELLER')")
@@ -94,7 +94,6 @@ public class SellerController {
         dto.setBankAccountNumber(profile.getBankAccountNumber());
         dto.setBankAccountHolderName(profile.getBankAccountHolderName());
 
-        // Check if bank info is complete
         boolean hasBankInfo = profile.getBankName() != null &&
                               profile.getBankAccountNumber() != null &&
                               profile.getBankAccountHolderName() != null;
@@ -104,7 +103,7 @@ public class SellerController {
     }
 
     /**
-     * Cập nhật seller profile (bao gồm bank info)
+     * Update seller profile and payout details.
      */
     @PutMapping("/profile")
     @PreAuthorize("hasRole('SELLER')")
@@ -116,11 +115,9 @@ public class SellerController {
         SellerProfile profile = sellerProfileRepository.findById(currentUser.getId())
                 .orElseThrow(() -> new RuntimeException("Error: Seller profile not found."));
 
-        // Update business info
         profile.setBusinessName(request.getBusinessName());
         profile.setDescription(request.getDescription());
 
-        // Update bank info
         profile.setBankName(request.getBankName());
         profile.setBankAccountNumber(request.getBankAccountNumber());
         profile.setBankAccountHolderName(request.getBankAccountHolderName());
@@ -137,30 +134,26 @@ public class SellerController {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         User currentUser = userRepository.findById(userDetails.getId()).get();
 
-        // Lấy các số liệu từ repository
         long pendingCount = templateRepository.countByAuthorIdAndStatus(currentUser.getId(), TemplateStatus.PENDING_REVIEW);
         long approvedCount = templateRepository.countByAuthorIdAndStatus(currentUser.getId(), TemplateStatus.APPROVED);
         long publishedCount = templateRepository.countByAuthorIdAndStatus(currentUser.getId(), TemplateStatus.PUBLISHED);
         long rejectedCount = templateRepository.countByAuthorIdAndStatus(currentUser.getId(), TemplateStatus.REJECTED);
 
-        // Tính earnings thực tế từ SellerPayout (chỉ tính những payout đã PAID)
         Double totalEarnings = sellerPayoutRepository.calculateTotalEarnings(currentUser);
         Double pendingEarnings = sellerPayoutRepository.calculatePendingEarnings(currentUser);
 
-        // Tạo DTO để trả về
         SellerDashboardDTO dashboardDTO = new SellerDashboardDTO();
         dashboardDTO.setPendingReviewCount(pendingCount);
-        dashboardDTO.setApprovedCount(approvedCount + publishedCount); // Gộp cả đã duyệt và đã đăng bán
+        dashboardDTO.setApprovedCount(approvedCount + publishedCount);
         dashboardDTO.setRejectedCount(rejectedCount);
         dashboardDTO.setSubmittedCount(pendingCount + approvedCount + publishedCount + rejectedCount);
         dashboardDTO.setTotalEarnings(totalEarnings != null ? totalEarnings : 0.0);
-        // Có thể thêm field pendingEarnings vào DTO nếu muốn hiển thị
 
         return ResponseEntity.ok(dashboardDTO);
     }
 
     /**
-     * Lấy lịch sử payout của seller
+     * Return payout history for the authenticated seller.
      */
     @GetMapping("/payouts")
     @PreAuthorize("hasRole('SELLER')")
@@ -170,10 +163,8 @@ public class SellerController {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         User currentUser = userRepository.findById(userDetails.getId()).get();
 
-        // Lấy tất cả payouts của seller
         List<SellerPayout> payouts = sellerPayoutRepository.findBySeller(currentUser);
 
-        // Convert sang DTO
         List<SellerPayoutDTO> dtos = payouts.stream()
                 .map(this::convertPayoutToDTO)
                 .collect(Collectors.toList());

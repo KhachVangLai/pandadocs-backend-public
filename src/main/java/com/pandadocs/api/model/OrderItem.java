@@ -24,5 +24,5 @@ public class OrderItem {
     private Template template;
 
     @Column(nullable = false)
-    private Double price; // Giá tại thời điểm mua
+    private Double price; // Price captured at purchase time.
 }

@@ -11,5 +11,5 @@ public class NotificationDTO {
     private String message;
     private boolean isRead;
     private Instant createdAt;
-    private String username; // Chỉ lấy username của người nhận
+    private String username; // Recipient username only.
 }

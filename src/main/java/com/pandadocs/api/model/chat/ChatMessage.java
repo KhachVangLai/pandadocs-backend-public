@@ -60,10 +60,10 @@ public class ChatMessage {
     private Long templateId;
 
     public enum ActionType {
-      BUY_NOW,        // Mua template ngay
-      ADD_TO_LIBRARY, // Thêm template miễn phí vào library
-      VIEW_DETAILS,   // Xem chi tiết template
-      CANCEL          // Hủy action
+      BUY_NOW,
+      ADD_TO_LIBRARY,
+      VIEW_DETAILS,
+      CANCEL
     }
   }
 }

@@ -8,6 +8,5 @@ import com.pandadocs.api.model.Role;
 
 @Repository
 public interface RoleRepository extends JpaRepository<Role, Integer> {
-  // Tìm kiếm role dựa trên tên (enum)
   Optional<Role> findByName(ERole name);
 }

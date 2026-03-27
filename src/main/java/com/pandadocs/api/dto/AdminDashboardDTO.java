@@ -6,15 +6,15 @@ import lombok.Setter;
 @Getter
 @Setter
 public class AdminDashboardDTO {
-    private double monthlyRevenue;  // Doanh thu trong 30 ngày qua
-    private double rewardCosts;     // Chi phí trả cho seller trong 30 ngày qua
-    private long totalTemplates;    // Tổng số template trên hệ thống
-    private long totalDownloads;    // Tổng số lượt tải trong 30 ngày qua
-    private long dailyUsers;        // Số user mới trong 24 giờ qua
+    private double monthlyRevenue;  // Revenue from the last 30 days.
+    private double rewardCosts;     // Seller payout costs from the last 30 days.
+    private long totalTemplates;    // Total templates in the system.
+    private long totalDownloads;    // Downloads from the last 30 days.
+    private long dailyUsers;        // New users from the last 24 hours.
 
     // Template statistics by status
-    private long pendingTemplates;   // Số template đang chờ duyệt (PENDING_REVIEW)
-    private long approvedTemplates;  // Số template đã duyệt nhưng chưa đăng (APPROVED)
-    private long publishedTemplates; // Số template đã xuất bản (PUBLISHED)
-    private long rejectedTemplates;  // Số template bị từ chối (REJECTED)
+    private long pendingTemplates;   // Templates waiting for review.
+    private long approvedTemplates;  // Templates approved but not yet published.
+    private long publishedTemplates; // Templates currently published.
+    private long rejectedTemplates;  // Templates rejected during review.
 }

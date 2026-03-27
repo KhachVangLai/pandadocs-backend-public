@@ -11,5 +11,5 @@ public class ReviewDTO {
     private int rating;
     private String comment;
     private Instant createdAt;
-    private String username; // Chỉ lấy username, không lấy cả object User
+    private String username; // Reviewer username only.
 }

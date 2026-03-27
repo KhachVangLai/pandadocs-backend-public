@@ -16,7 +16,6 @@ public class TemplateUploadRequest {
     private List<String> industry;
     private Boolean isPremium;
 
-    // Getters and Setters
     public String getTitle() {
         return title;
     }

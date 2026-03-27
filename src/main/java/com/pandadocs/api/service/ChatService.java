@@ -67,10 +67,8 @@ public class ChatService {
      */
     @Transactional
     public ChatMessageResponse processMessage(Long userId, String sessionId, String userMessage) {
-        // Check rate limit
         rateLimiter.checkAndIncrementQuota(userId);
 
-        // Get or create session
         ChatSession session;
         if (sessionId != null && !sessionId.isBlank()) {
             session = sessionManager.getSessionForUser(sessionId, userId)
@@ -79,17 +77,14 @@ public class ChatService {
             session = sessionManager.createOrGetSession(userId);
         }
 
-        // Add user message to session
         ChatMessage userChatMessage = ChatMessage.builder()
                 .role(ChatMessage.MessageRole.USER)
                 .content(userMessage)
                 .build();
         session.addMessage(userChatMessage);
 
-        // Detect search intent and search for templates
         List<TemplateCardDTO> templates = detectAndSearchTemplates(userMessage);
 
-        // If no templates found from search, show popular templates as fallback
         if (templates.isEmpty()) {
             log.info("No templates found from search, showing popular templates");
             templates = templateSearchService.getPopularTemplates(10);
@@ -97,7 +92,6 @@ public class ChatService {
 
         log.info("Passing {} templates to Gemini for context", templates.size());
 
-        // Generate AI response WITH template context (RAG pattern)
         String aiResponse;
         try {
             aiResponse = geminiService.generateResponseWithContext(
@@ -108,18 +102,15 @@ public class ChatService {
             log.debug("Gemini response: {}", aiResponse);
         } catch (Exception e) {
             log.error("Error calling Gemini API: {}", e.getMessage(), e);
-            // Fallback response if Gemini fails
             aiResponse = generateFallbackResponse(templates);
         }
 
-        // Add AI response to session
         ChatMessage aiChatMessage = ChatMessage.builder()
                 .role(ChatMessage.MessageRole.ASSISTANT)
                 .content(aiResponse)
                 .build();
         session.addMessage(aiChatMessage);
 
-        // Auto-generate conversation title if this is the first message
         if (session.getConversationTitle() == null && geminiConfig.isAutoTitleEnabled()) {
             try {
                 String title = geminiService.generateConversationTitle(userMessage);
@@ -130,13 +121,10 @@ public class ChatService {
             }
         }
 
-        // Detect purchase intent and generate action buttons
         List<ChatActionButtonDTO> actionButtons = detectPurchaseIntent(aiResponse, templates);
 
-        // Save conversation metadata to database (async)
         saveConversationMetadata(userId, session);
 
-        // Build response
         return ChatMessageResponse.builder()
                 .sessionId(session.getSessionId())
                 .message(aiResponse)
@@ -157,7 +145,6 @@ public class ChatService {
         ChatSession session = sessionManager.getSessionForUser(sessionId, userId)
                 .orElseThrow(() -> new ChatSessionNotFoundException(sessionId));
 
-        // Convert messages to DTOs
         List<ChatSessionResponse.ChatMessageDTO> messageDTOs = session.getMessages().stream()
                 .map(msg -> ChatSessionResponse.ChatMessageDTO.builder()
                         .role(msg.getRole().toString())
@@ -182,7 +169,6 @@ public class ChatService {
      * @param sessionId Session ID
      */
     public void clearSession(Long userId, String sessionId) {
-        // Verify session belongs to user
         sessionManager.getSessionForUser(sessionId, userId)
                 .orElseThrow(() -> new ChatSessionNotFoundException(sessionId));
 
@@ -198,11 +184,9 @@ public class ChatService {
      * @return ResponseEntity with appropriate action
      */
     public ResponseEntity<?> handlePurchaseAction(Long userId, PurchaseActionRequest request) {
-        // Verify session belongs to user
         sessionManager.getSessionForUser(request.getSessionId(), userId)
                 .orElseThrow(() -> new ChatSessionNotFoundException(request.getSessionId()));
 
-        // Get template details
         TemplateCardDTO template = templateSearchService.getTemplateById(request.getTemplateId());
         if (template == null) {
             return ResponseEntity.badRequest().body(Map.of("error", "Template not found"));
@@ -210,7 +194,6 @@ public class ChatService {
 
         switch (request.getAction()) {
             case BUY_NOW:
-                // Return instruction to call purchase endpoint
                 return ResponseEntity.ok(Map.of(
                         "action", "REDIRECT_TO_PURCHASE",
                         "templateId", request.getTemplateId(),
@@ -219,7 +202,6 @@ public class ChatService {
                 ));
 
             case ADD_TO_LIBRARY:
-                // Return instruction to add free template
                 if (template.getPrice() > 0) {
                     return ResponseEntity.badRequest().body(Map.of("error", "This is not a free template"));
                 }
@@ -231,7 +213,6 @@ public class ChatService {
                 ));
 
             case VIEW_DETAILS:
-                // Return template URL
                 return ResponseEntity.ok(Map.of(
                         "action", "VIEW_DETAILS",
                         "templateId", request.getTemplateId(),
@@ -256,7 +237,6 @@ public class ChatService {
     private List<TemplateCardDTO> detectAndSearchTemplates(String userMessage) {
         String lowerMessage = userMessage.toLowerCase();
 
-        // Keywords that indicate search intent
         boolean isSearchIntent =
                 lowerMessage.contains("tìm") ||
                 lowerMessage.contains("search") ||
@@ -270,13 +250,10 @@ public class ChatService {
             return new ArrayList<>();
         }
 
-        // Extract price if mentioned (e.g., "dưới 100k", "max 50000")
         Double maxPrice = extractMaxPrice(lowerMessage);
 
-        // Extract category keywords
         String category = extractCategory(lowerMessage);
 
-        // Search templates
         return templateSearchService.searchTemplates(userMessage, category, maxPrice, 10);
     }
 
@@ -290,7 +267,6 @@ public class ChatService {
     private List<ChatActionButtonDTO> detectPurchaseIntent(String aiResponse, List<TemplateCardDTO> templates) {
         String lowerResponse = aiResponse.toLowerCase();
 
-        // Keywords that indicate purchase confirmation question
         boolean isPurchaseConfirm =
                 lowerResponse.contains("bạn có muốn") ||
                 lowerResponse.contains("bạn muốn mua") ||
@@ -301,19 +277,16 @@ public class ChatService {
             return null;
         }
 
-        // Generate action buttons for the first template in context
         TemplateCardDTO firstTemplate = templates.get(0);
         List<ChatActionButtonDTO> buttons = new ArrayList<>();
 
         if (firstTemplate.getPrice() == 0) {
-            // Free template
             buttons.add(ChatActionButtonDTO.builder()
                     .type(ChatActionButtonDTO.ActionType.ADD_TO_LIBRARY)
                     .label("Thêm vào library")
                     .templateId(firstTemplate.getId())
                     .build());
         } else {
-            // Paid template
             buttons.add(ChatActionButtonDTO.builder()
                     .type(ChatActionButtonDTO.ActionType.BUY_NOW)
                     .label("Mua ngay (" + String.format("%.0f", firstTemplate.getPrice()) + "đ)")
@@ -340,7 +313,7 @@ public class ChatService {
      * Extracts maximum price from user message
      */
     private Double extractMaxPrice(String message) {
-        // Pattern: "dưới 100k", "max 50000", "< 100000"
+        // Matches phrases such as "under 100k", "max 50000", or "< 100000".
         Pattern pattern = Pattern.compile("(dưới|max|tối đa|<)\\s*(\\d+)(k|000)?");
         Matcher matcher = pattern.matcher(message);
 
@@ -402,7 +375,6 @@ public class ChatService {
             response.append(String.format("%d. **%s**\n", i + 1, t.getTitle()));
 
             if (t.getDescription() != null && !t.getDescription().isEmpty()) {
-                // Truncate description if too long
                 String desc = t.getDescription();
                 if (desc.length() > 100) {
                     desc = desc.substring(0, 97) + "...";
@@ -441,14 +413,12 @@ public class ChatService {
             conversationRepository.findBySessionId(session.getSessionId())
                     .ifPresentOrElse(
                             conversation -> {
-                                // Update existing
                                 conversation.setTitle(session.getConversationTitle());
                                 conversation.setMessageCount(session.getMessageCount());
                                 conversation.updateActivity();
                                 conversationRepository.save(conversation);
                             },
                             () -> {
-                                // Create new
                                 ChatConversation conversation = ChatConversation.builder()
                                         .user(user)
                                         .sessionId(session.getSessionId())

@@ -71,7 +71,7 @@ public class TemplateController {
     private CategoryRepository categoryRepository;
 
     @Autowired
-    private TemplateService templateService; // <-- Thêm service
+    private TemplateService templateService;
 
     @Autowired
     private UserRepository userRepository;
@@ -97,7 +97,6 @@ public class TemplateController {
     @Autowired
     private com.pandadocs.api.repository.OrderItemRepository orderItemRepository;
 
-    // API lấy tất cả template
     @GetMapping
     public Page<TemplateDTO> getAllTemplates(
             @RequestParam(required = false, defaultValue = "") String search,
@@ -106,38 +105,31 @@ public class TemplateController {
         Page<Template> templatePage;
 
         if (search != null && !search.isEmpty()) {
-            // Nếu có tham số 'search', gọi hàm tìm kiếm
             templatePage = templateRepository.findByTitleContainingIgnoreCase(search, pageable);
         } else {
-            // Nếu không, lấy tất cả với eager loading
             templatePage = templateRepository.findAllWithCategoryAndAuthor(pageable);
         }
 
-        // Chuyển đổi Page<Template> thành Page<TemplateDTO>
         return templatePage.map(templateService::convertToDto);
     }
 
-    // API lấy chi tiết 1 template theo ID
     @GetMapping("/{id}")
     public ResponseEntity<TemplateDTO> getTemplateById(@PathVariable Long id) {
-        return templateRepository.findByIdWithCategoryAndAuthor(id) // <-- USE THE NEW METHOD
+        return templateRepository.findByIdWithCategoryAndAuthor(id)
                 .map(templateService::convertToDto) 
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // API lấy tất cả các danh mục (giữ nguyên, không đổi)
     @GetMapping("/categories")
     public List<Category> getAllCategories() {
         return categoryRepository.findAll();
     }
 
-    // API TẠO MỚI TEMPLATE (Dành cho Seller và Admin)
     @PostMapping
-    @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')") // <-- SỬA LẠI QUYỀN
+    @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
     @Transactional
     public ResponseEntity<TemplateDTO> createTemplate(@RequestBody TemplateDTO templateDTO) {
-        // Lấy thông tin người dùng đang đăng nhập
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String currentUsername = authentication.getName();
         User author = userRepository.findByUsernameWithRoles(currentUsername)
@@ -148,27 +140,22 @@ public class TemplateController {
 
         Template newTemplate = templateService.convertToEntity(templateDTO, author, category);
 
-        // --- THAY ĐỔI LOGIC DỰA TRÊN ROLE ---
-        // Kiểm tra xem người dùng có quyền Admin không
+        // Admin-created templates are published immediately; seller submissions require review.
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_ADMIN"));
 
         if (isAdmin) {
-            // Nếu là Admin, đăng bán ngay lập-tức
             newTemplate.setStatus(TemplateStatus.PUBLISHED);
         } else {
-            // Nếu là Seller, phải chờ duyệt
             newTemplate.setStatus(TemplateStatus.PENDING_REVIEW);
         }
-        // ------------------------------------
 
         Template savedTemplate = templateRepository.save(newTemplate);
         return new ResponseEntity<>(templateService.convertToDto(savedTemplate), HttpStatus.CREATED);
     }
 
-    // ========== NEW API: UPLOAD TEMPLATE WITH FILE ==========
     /**
-     * API TẠO MỚI TEMPLATE VỚI FILE UPLOAD
+     * Create a template by uploading its source file.
      * POST /api/templates/upload
      * Content-Type: multipart/form-data
      *
@@ -176,7 +163,7 @@ public class TemplateController {
      * - file: MultipartFile (template file)
      * - title: String
      * - description: String
-     * - price: BigDecimal (giá bán cho user cuối)
+     * - price: BigDecimal
      * - categoryId: Long
      * - format: String[] (optional)
      * - industry: String[] (optional)
@@ -195,17 +182,16 @@ public class TemplateController {
 
         String fileUrl = null;
         try {
-            // 1. Get current user
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             User author = userRepository.findByIdWithRoles(userDetails.getId())
                     .orElseThrow(() -> new EntityNotFoundException("Author not found"));
 
-            // 2. VALIDATION: Check if seller has bank info (skip for admin)
             boolean isAdmin = authentication.getAuthorities().stream()
                     .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_ADMIN"));
 
             if (!isAdmin) {
+                // Sellers must provide payout details before submitting a template.
                 SellerProfile sellerProfile = sellerProfileRepository.findById(author.getId()).orElse(null);
                 if (sellerProfile == null ||
                     sellerProfile.getBankName() == null || sellerProfile.getBankName().isEmpty() ||
@@ -218,19 +204,16 @@ public class TemplateController {
                 }
             }
 
-            // 3. Find category
             Category category = categoryRepository.findById(categoryId)
                     .orElseThrow(() -> new EntityNotFoundException("Category not found"));
 
-            // 4. Upload file to Firebase Storage
             fileUrl = firebaseStorageService.uploadTemplate(file, author.getId());
 
-            // 5. Create Template entity
             Template newTemplate = new Template();
             newTemplate.setTitle(title);
             newTemplate.setDescription(description);
             newTemplate.setPrice(Double.parseDouble(price));
-            newTemplate.setFileUrl(fileUrl); // Firebase Storage URL
+            newTemplate.setFileUrl(fileUrl);
             newTemplate.setCategory(category);
             newTemplate.setAuthor(author);
             newTemplate.setPremium(isPremium);
@@ -243,14 +226,13 @@ public class TemplateController {
                 newTemplate.setStatus(TemplateStatus.PENDING_REVIEW);
             }
 
-            // 6. Save to database and return
             Template savedTemplate = templateRepository.save(newTemplate);
             return ResponseEntity.status(HttpStatus.CREATED).body(templateService.convertToDto(savedTemplate));
 
         } catch (Exception e) {
             logger.error("Error during template upload process for title '{}': {}", title, e.getMessage(), e);
 
-            // If fileUrl is not null, it means the file was uploaded but something failed afterwards (e.g., DB save)
+            // Clean up uploaded files if persistence fails after storage succeeds.
             if (fileUrl != null) {
                 logger.info("Attempting to delete orphaned Firebase file: {}", fileUrl);
                 try {
@@ -271,7 +253,7 @@ public class TemplateController {
     }
 
     /**
-     * API UPLOAD PREVIEW IMAGES FOR TEMPLATE
+     * Upload preview images for a template.
      * POST /api/templates/{id}/preview-images
      * Content-Type: multipart/form-data
      *
@@ -285,11 +267,9 @@ public class TemplateController {
             @RequestParam("files") List<MultipartFile> files) {
 
         try {
-            // 1. Find template
             Template template = templateRepository.findById(id)
                     .orElseThrow(() -> new EntityNotFoundException("Template not found"));
 
-            // 2. Verify ownership
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             boolean isAdmin = authentication.getAuthorities().stream()
@@ -300,15 +280,12 @@ public class TemplateController {
                         .body(new MessageResponse("Error: You are not authorized to modify this template"));
             }
 
-            // 3. Upload images to Firebase Storage
             List<String> imageUrls = firebaseStorageService.uploadPreviewImages(files, id);
 
-            // 4. Update template
             template.setPreviewImages(imageUrls);
             template.setUpdatedAt(Instant.now());
             templateRepository.save(template);
 
-            // 5. Return response
             FileUploadResponse response = new FileUploadResponse();
             response.setFileUrls(imageUrls);
             response.setMessage("Preview images uploaded successfully");
@@ -322,15 +299,13 @@ public class TemplateController {
         }
     }
 
-    // API CẬP NHẬT TEMPLATE (Chỉ Admin)
-    // Supports partial updates - only update fields that are provided in the request
+    // Support partial updates by ignoring fields that are not present in the request.
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TemplateDTO> updateTemplate(@PathVariable Long id, @RequestBody TemplateDTO templateDetails) {
         Template template = templateRepository.findByIdWithCategoryAndAuthor(id)
                 .orElseThrow(() -> new EntityNotFoundException("Template not found with id: " + id));
 
-        // Only update fields that are provided (partial update support)
         if (templateDetails.getTitle() != null) {
             template.setTitle(templateDetails.getTitle());
         }
@@ -361,21 +336,19 @@ public class TemplateController {
 
         templateRepository.save(template);
 
-        // Reload template with eager loading to avoid LazyInitializationException
+        // Reload the entity with eager relationships before converting it to DTO.
         Template updatedTemplate = templateRepository.findByIdWithCategoryAndAuthor(id)
                 .orElseThrow(() -> new EntityNotFoundException("Template not found after update"));
 
         return ResponseEntity.ok(templateService.convertToDto(updatedTemplate));
     }
 
-    // API XÓA TEMPLATE (Chỉ Admin)
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public ResponseEntity<?> deleteTemplate(@PathVariable Long id) {
         logger.info("DELETE TEMPLATE ENDPOINT CALLED - ID: {}", id);
 
-        // Log current authentication
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null) {
             logger.info("Current user: {}", authentication.getName());
@@ -385,7 +358,7 @@ public class TemplateController {
         }
 
         return templateRepository.findById(id).map(template -> {
-            // 1. Validate: Only allow deletion of PUBLISHED templates
+            // Only published templates can be deleted through this endpoint.
             if (template.getStatus() != TemplateStatus.PUBLISHED) {
                 logger.warn("Attempt to delete non-PUBLISHED template (ID: {}). Status: {}", id, template.getStatus());
                 return ResponseEntity.badRequest()
@@ -393,25 +366,19 @@ public class TemplateController {
                         "For pending or draft templates, use the status update API instead."));
             }
 
-            // 2. Delete all related records from database (CASCADE DELETE)
+            // Remove related records first because not every relationship cascades.
             try {
-                // Delete seller payouts
                 sellerPayoutRepository.deleteByTemplateId(id);
                 logger.info("Deleted seller payouts for template ID: {}", id);
 
-                // Delete downloads
                 downloadRepository.deleteByTemplateId(id);
                 logger.info("Deleted downloads for template ID: {}", id);
 
-                // Delete reviews
                 reviewRepository.deleteByTemplateId(id);
                 logger.info("Deleted reviews for template ID: {}", id);
 
-                // Delete library entries (purchased records)
                 libraryRepository.deleteByTemplateId(id);
                 logger.info("Deleted library entries for template ID: {}", id);
-
-                // Note: order_items will be handled by database cascade or kept for history
 
             } catch (Exception e) {
                 logger.error("Failed to delete related records for template ID: {}: {}", id, e.getMessage(), e);
@@ -419,31 +386,28 @@ public class TemplateController {
                     .body(new MessageResponse("Failed to delete related records: " + e.getMessage()));
             }
 
-            // 3. Delete template file from Firebase Storage
             if (template.getFileUrl() != null && !template.getFileUrl().isEmpty()) {
                 try {
                     firebaseStorageService.deleteFile(template.getFileUrl());
                     logger.info("Deleted template file from Firebase: {}", template.getFileUrl());
                 } catch (Exception e) {
-                    // Log error but continue deletion
+                    // Continue deleting the database record even if storage cleanup fails.
                     logger.error("Failed to delete template file from Firebase (URL: {}): {}", template.getFileUrl(), e.getMessage(), e);
                 }
             }
 
-            // 4. Delete preview images from Firebase Storage
             if (template.getPreviewImages() != null && !template.getPreviewImages().isEmpty()) {
                 for (String imageUrl : template.getPreviewImages()) {
                     try {
                         firebaseStorageService.deleteFile(imageUrl);
                         logger.info("Deleted preview image from Firebase: {}", imageUrl);
                     } catch (Exception e) {
-                        // Log error but continue deletion
+                        // Continue deleting the database record even if storage cleanup fails.
                         logger.error("Failed to delete preview image from Firebase (URL: {}): {}", imageUrl, e.getMessage(), e);
                     }
                 }
             }
 
-            // 5. Delete template record from database
             templateRepository.delete(template);
             logger.info("Deleted template record from database (ID: {})", id);
 
@@ -451,7 +415,6 @@ public class TemplateController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    // API LẤY TẤT CẢ REVIEW CỦA MỘT TEMPLATE
     @GetMapping("/{id}/reviews")
     public ResponseEntity<List<ReviewDTO>> getReviewsForTemplate(@PathVariable Long id) {
         List<Review> reviews = reviewRepository.findByTemplateIdWithUser(id);
@@ -467,22 +430,16 @@ public class TemplateController {
         return ResponseEntity.ok(dtos);
     }
 
-    // API THÊM MỘT REVIEW MỚI (Yêu cầu đăng nhập)
     @PostMapping("/{id}/reviews")
-    @PreAuthorize("hasRole('USER')") // Chỉ user mới được review
+    @PreAuthorize("hasRole('USER')")
     @Transactional
     public ResponseEntity<?> addReview(@PathVariable Long id, @Valid @RequestBody ReviewDTO reviewRequest) {
-        // Lấy user đang đăng nhập
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         User currentUser = userRepository.findByIdWithRoles(userDetails.getId()).orElseThrow(() -> new RuntimeException("Error: User not found"));
 
-        // Tìm template để review
         Template template = templateRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Template not found"));
-
-        // Logic nghiệp vụ: Bạn có thể thêm kiểm tra xem user này đã mua template chưa
-        // (Ví dụ: libraryRepository.existsByUserAndTemplate(currentUser, template))
 
         Review newReview = new Review();
         newReview.setTemplate(template);
@@ -493,27 +450,22 @@ public class TemplateController {
 
         reviewRepository.save(newReview);
 
-        // Cập nhật điểm rating trung bình và số lượng reviews cho template
         updateTemplateRating(template);
 
         return new ResponseEntity<>(new MessageResponse("Review added successfully!"), HttpStatus.CREATED);
     }
 
-    // --- API DOWNLOAD TEMPLATE ---
     @GetMapping("/{id}/download")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> downloadTemplate(@PathVariable Long id) {
-        // 1. Lấy thông tin user
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         User currentUser = userRepository.findByIdWithRoles(userDetails.getId())
                 .orElseThrow(() -> new RuntimeException("Error: User not found"));
 
-        // 2. Tìm template (giữ nguyên)
         Template template = templateRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Template not found"));
 
-        // 3. Kiểm tra quyền sở hữu (giữ nguyên)
         boolean hasPurchased = libraryRepository.existsByUserAndTemplate(currentUser, template);
         boolean isAdmin = currentUser.getRoles().stream()
                 .anyMatch(role -> role.getName().equals(ERole.ROLE_ADMIN));
@@ -522,20 +474,17 @@ public class TemplateController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new MessageResponse("Error: You have not purchased this template."));
         }
-        // --- THÊM LOGIC GHI LẠI DOWNLOAD ---
+
+        // Record the download before streaming the file.
         Download downloadLog = new Download();
         downloadLog.setUser(currentUser);
         downloadLog.setTemplate(template);
         downloadLog.setTimestamp(Instant.now());
         downloadRepository.save(downloadLog);
-        // ------------------------------------
 
-        // 4. Download file from Firebase Storage and stream to user
         try {
-            // Get file info (filename, content-type)
             FirebaseStorageService.FileInfo fileInfo = firebaseStorageService.getFileInfo(template.getFileUrl());
 
-            // DEBUG: Log file info
             logger.debug("=== DOWNLOAD DEBUG ===");
             logger.debug("Template ID: {}", id);
             logger.debug("File URL: {}", template.getFileUrl());
@@ -543,27 +492,24 @@ public class TemplateController {
             logger.debug("Content-Type: {}", fileInfo.getContentType());
             logger.debug("======================");
 
-            // Download file content
             byte[] fileContent = firebaseStorageService.downloadFile(template.getFileUrl());
 
-            // Encode filename for Content-Disposition header (handles special characters)
+            // Encode the filename for Content-Disposition headers.
             String encodedFilename = java.net.URLEncoder.encode(fileInfo.getFilename(), "UTF-8")
                     .replaceAll("\\+", "%20");
 
-            // RFC 6266: Use both filename= (for old browsers) and filename*= (for new browsers with UTF-8 support)
+            // Use both filename parameters for broad browser compatibility.
             String contentDisposition = String.format(
                 "attachment; filename=\"%s\"; filename*=UTF-8''%s",
-                fileInfo.getFilename().replaceAll("\"", "\\\\\""),  // Escape quotes in filename
+                fileInfo.getFilename().replaceAll("\"", "\\\\\""),
                 encodedFilename
             );
 
             logger.debug("Encoded filename: {}", encodedFilename);
             logger.debug("Content-Disposition: {}", contentDisposition);
 
-            // Create resource from byte array
             ByteArrayResource resource = new ByteArrayResource(fileContent);
 
-            // Build headers
             HttpHeaders headers = new HttpHeaders();
             headers.add(HttpHeaders.CONTENT_DISPOSITION, contentDisposition);
             headers.setContentType(MediaType.parseMediaType(fileInfo.getContentType()));
@@ -571,7 +517,6 @@ public class TemplateController {
 
             logger.debug("Content-Length: {}", fileContent.length);
 
-            // Return file with proper headers using ByteArrayResource
             return ResponseEntity.ok()
                     .headers(headers)
                     .body(resource);
@@ -584,7 +529,6 @@ public class TemplateController {
 
     @GetMapping("/popular")
     public ResponseEntity<List<TemplateDTO>> getPopularTemplates() {
-        // Chúng ta chỉ lấy các template đã được PUBLISHED
         List<Template> popularTemplates = templateRepository.findTop10ByStatusOrderByDownloadsDesc(TemplateStatus.PUBLISHED);
         
         List<TemplateDTO> dtos = popularTemplates.stream()
@@ -596,8 +540,7 @@ public class TemplateController {
 
     /**
      * GET /api/templates/{id}/preview
-     * Trả về danh sách signed URLs cho preview images (có thời hạn 1 giờ)
-     * Signed URLs cho phép frontend hiển thị ảnh private từ Firebase Storage
+     * Return signed preview-image URLs valid for one hour.
      */
     @GetMapping("/{id}/preview")
     @Transactional
@@ -605,16 +548,15 @@ public class TemplateController {
         Template template = templateRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Template not found"));
 
-        // Convert Firebase Storage URLs sang Signed URLs để public access
+        // Signed URLs allow the frontend to display private Firebase images.
         List<String> signedUrls = new ArrayList<>();
         if (template.getPreviewImages() != null) {
             for (String imageUrl : template.getPreviewImages()) {
                 try {
-                    // Generate signed URL valid for 1 hour
                     String signedUrl = firebaseStorageService.generateSignedUrl(imageUrl);
                     signedUrls.add(signedUrl);
                 } catch (Exception e) {
-                    // If failed, return original URL (fallback)
+                    // Fall back to the stored URL if signed URL generation fails.
                     signedUrls.add(imageUrl);
                 }
             }
@@ -623,7 +565,7 @@ public class TemplateController {
         return ResponseEntity.ok(signedUrls);
     }
 
-    // Helper method: Cập nhật rating trung bình và số lượng reviews cho template
+    // Recalculate the cached rating summary after a review changes.
     private void updateTemplateRating(Template template) {
         Double averageRating = reviewRepository.calculateAverageRating(template.getId());
         Long reviewCount = reviewRepository.countByTemplateId(template.getId());

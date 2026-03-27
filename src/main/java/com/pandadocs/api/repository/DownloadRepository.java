@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
-import java.time.Instant; // Thêm import
+import java.time.Instant;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -16,7 +16,6 @@ public interface DownloadRepository extends JpaRepository<Download, Long> {
     List<Download> findUserDownloads(@Param("userId") Long userId);
     long countByTimestampAfter(Instant startDate);
 
-    // Xóa tất cả downloads của một template
     @Modifying
     @Transactional
     void deleteByTemplateId(Long templateId);

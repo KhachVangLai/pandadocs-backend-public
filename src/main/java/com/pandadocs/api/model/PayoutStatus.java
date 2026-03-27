@@ -1,7 +1,7 @@
 package com.pandadocs.api.model;
 
 public enum PayoutStatus {
-    PENDING,    // Chờ admin chuyển tiền
-    PAID,       // Đã chuyển tiền cho seller
-    REJECTED    // Admin từ chối trả tiền (reject template)
+    PENDING,    // Waiting for the admin to send payment.
+    PAID,       // Seller has been paid.
+    REJECTED    // Payout request was rejected.
 }

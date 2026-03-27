@@ -33,7 +33,7 @@ public class JwtUtils {
         .compact();
   }
 
-  // Generate JWT token from username (for OAuth2)
+  // Generate a JWT directly from a username for OAuth2 logins.
   public String generateTokenFromUsername(String username) {
     return Jwts.builder()
         .setSubject(username)
@@ -67,6 +67,4 @@ public class JwtUtils {
   private Key key() {
     return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
   }
-
-  // Các hàm xác thực token sẽ được thêm vào sau
 }

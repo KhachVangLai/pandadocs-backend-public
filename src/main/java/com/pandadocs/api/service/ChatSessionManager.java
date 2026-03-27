@@ -21,10 +21,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ChatSessionManager {
 
-    // In-memory storage: sessionId -> ChatSession
+    // sessionId -> ChatSession
     private final Map<String, ChatSession> sessions = new ConcurrentHashMap<>();
 
-    // User's active sessions: userId -> sessionId
+    // userId -> active sessionId
     private final Map<Long, String> userActiveSessions = new ConcurrentHashMap<>();
 
     /**
@@ -35,7 +35,6 @@ public class ChatSessionManager {
      * @return ChatSession
      */
     public ChatSession createOrGetSession(Long userId) {
-        // Check if user already has an active session
         String existingSessionId = userActiveSessions.get(userId);
         if (existingSessionId != null) {
             ChatSession existingSession = sessions.get(existingSessionId);
@@ -43,13 +42,11 @@ public class ChatSessionManager {
                 log.debug("Returning existing session {} for user {}", existingSessionId, userId);
                 return existingSession;
             } else {
-                // Session expired, remove it
                 sessions.remove(existingSessionId);
                 userActiveSessions.remove(userId);
             }
         }
 
-        // Create new session
         String sessionId = UUID.randomUUID().toString();
         ChatSession session = ChatSession.builder()
                 .sessionId(sessionId)
@@ -73,7 +70,6 @@ public class ChatSessionManager {
         ChatSession session = sessions.get(sessionId);
         if (session != null) {
             if (session.isExpired()) {
-                // Remove expired session
                 deleteSession(sessionId);
                 return Optional.empty();
             }
@@ -142,12 +138,11 @@ public class ChatSessionManager {
     /**
      * Cleanup expired sessions every 5 minutes
      */
-    @Scheduled(fixedRate = 300000) // 5 minutes
+    @Scheduled(fixedRate = 300000)
     public void cleanupExpiredSessions() {
         int initialCount = sessions.size();
         Instant now = Instant.now();
 
-        // Find and remove expired sessions
         sessions.entrySet().removeIf(entry -> {
             if (entry.getValue().isExpired()) {
                 userActiveSessions.remove(entry.getValue().getUserId());

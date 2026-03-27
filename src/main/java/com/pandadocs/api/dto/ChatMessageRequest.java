@@ -12,15 +12,10 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChatMessageRequest {
-    /**
-     * Session ID (optional, will be created if null)
-     */
+    // Optional; a new session is created when omitted.
     @Size(max = 100)
     private String sessionId;
 
-    /**
-     * User's message to send to AI
-     */
     @NotBlank(message = "Message cannot be empty")
     @Size(max = 500, message = "Message too long (max 500 characters)")
     private String message;

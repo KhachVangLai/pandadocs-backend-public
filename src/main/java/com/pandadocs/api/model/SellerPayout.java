@@ -26,20 +26,20 @@ public class SellerPayout {
     private User seller;
 
     @Column(nullable = false)
-    private Double proposedPrice; // Giá seller đề xuất
+    private Double proposedPrice; // Price proposed by the seller.
 
     @Column(nullable = false)
-    private Double agreedPrice; // Giá admin đồng ý trả
+    private Double agreedPrice; // Price approved by the admin.
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
-    private PayoutStatus status; // PENDING, PAID, REJECTED
+    private PayoutStatus status;
 
     @Column(columnDefinition = "TEXT")
-    private String adminNote; // Ghi chú của admin
+    private String adminNote; // Internal note from the admin.
 
-    private Instant paidAt; // Thời điểm admin confirm đã trả
+    private Instant paidAt; // Time when the payout was confirmed.
 
     @Column(nullable = false)
-    private Instant createdAt; // Thời điểm tạo payout record
+    private Instant createdAt; // Time when the payout record was created.
 }

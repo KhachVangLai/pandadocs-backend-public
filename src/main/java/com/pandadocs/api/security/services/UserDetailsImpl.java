@@ -11,7 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.pandadocs.api.model.User;
-import com.pandadocs.api.model.UserStatus; // Thêm import này
+import com.pandadocs.api.model.UserStatus;
 
 public class UserDetailsImpl implements UserDetails {
   private static final long serialVersionUID = 1L;
@@ -21,17 +21,17 @@ public class UserDetailsImpl implements UserDetails {
   private String email;
   @JsonIgnore
   private String password;
-  private UserStatus status; // <-- THÊM TRƯỜNG STATUS
+  private UserStatus status;
 
   private Collection<? extends GrantedAuthority> authorities;
 
-  public UserDetailsImpl(Long id, String username, String email, String password, UserStatus status, // <-- THÊM STATUS VÀO CONSTRUCTOR
+  public UserDetailsImpl(Long id, String username, String email, String password, UserStatus status,
       Collection<? extends GrantedAuthority> authorities) {
     this.id = id;
     this.username = username;
     this.email = email;
     this.password = password;
-    this.status = status; // <-- GÁN STATUS
+    this.status = status;
     this.authorities = authorities;
   }
 
@@ -45,17 +45,15 @@ public class UserDetailsImpl implements UserDetails {
         user.getUsername(), 
         user.getEmail(),
         user.getPassword(),
-        user.getStatus(), // <-- LẤY STATUS TỪ USER ENTITY
+        user.getStatus(),
         authorities);
   }
 
-  // --- PHẦN THAY ĐỔI QUAN TRỌNG NHẤT ---
+  // Only active accounts should be allowed to authenticate.
   @Override
   public boolean isEnabled() {
-    // Trả về true chỉ khi status là ACTIVE
     return this.status == UserStatus.ACTIVE;
   }
-  // ------------------------------------
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {

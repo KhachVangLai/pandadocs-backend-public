@@ -7,11 +7,11 @@ import java.util.regex.Pattern;
 public class PasswordValidator implements ConstraintValidator<ValidPassword, String> {
 
     // Regex pattern:
-    // - (?=.*[a-z])     : ít nhất 1 chữ thường
-    // - (?=.*[A-Z])     : ít nhất 1 chữ hoa
-    // - (?=.*\d)        : ít nhất 1 số
-    // - (?=.*[@$!%*?&]) : ít nhất 1 ký tự đặc biệt
-    // - .{8,}           : ít nhất 8 ký tự
+    // - (?=.*[a-z])     : at least one lowercase letter
+    // - (?=.*[A-Z])     : at least one uppercase letter
+    // - (?=.*\d)        : at least one digit
+    // - (?=.*[@$!%*?&]) : at least one allowed special character
+    // - .{8,}           : at least eight characters
     private static final String PASSWORD_PATTERN =
         "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
 
@@ -31,7 +31,7 @@ public class PasswordValidator implements ConstraintValidator<ValidPassword, Str
         boolean isValid = pattern.matcher(password).matches();
 
         if (!isValid) {
-            // Custom error message chi tiết hơn
+            // Provide a more specific validation message.
             context.disableDefaultConstraintViolation();
 
             if (password.length() < 8) {

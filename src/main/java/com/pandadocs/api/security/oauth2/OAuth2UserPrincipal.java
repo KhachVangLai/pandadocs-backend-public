@@ -33,7 +33,7 @@ public class OAuth2UserPrincipal implements OAuth2User {
 
     @Override
     public String getName() {
-        return user.getEmail(); // Return email as the principal name
+        return user.getEmail();
     }
 
     public User getUser() {

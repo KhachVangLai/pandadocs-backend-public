@@ -42,7 +42,6 @@ public class ChatRateLimiter {
         ChatQuota quota = chatQuotaRepository.findByUserId(userId)
                 .orElseGet(() -> createNewQuota(userId));
 
-        // Reset quotas if needed
         boolean resetHourly = quota.needsHourlyReset();
         boolean resetDaily = quota.needsDailyReset();
 
@@ -56,7 +55,6 @@ public class ChatRateLimiter {
             log.debug("Reset daily quota for user {}", userId);
         }
 
-        // Check limits
         int hourlyLimit = geminiConfig.getMessagesPerHour();
         int dailyLimit = geminiConfig.getMessagesPerDay();
 
@@ -74,7 +72,6 @@ public class ChatRateLimiter {
             );
         }
 
-        // Increment quota
         quota.increment();
         chatQuotaRepository.save(quota);
 

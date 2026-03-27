@@ -11,8 +11,8 @@ public class CollectionDTO {
     private String name;
     private String description;
     private int templateCount;
-    private List<TemplateDTO> templates; // Tùy chọn, có thể chỉ trả về khi xem chi tiết
-    // Getters and setters
+    private List<TemplateDTO> templates; // Optional; typically returned only for detail views.
+
     public List<TemplateDTO> getTemplates() {
         return templates;
     }

@@ -30,19 +30,19 @@ public class Order {
     private Instant createdAt;
 
     @Column(length = 50)
-    private String status; // Deprecated: Dùng paymentStatus thay thế
+    private String status; // Deprecated; use paymentStatus instead.
 
     // PayOS payment fields
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    private PaymentStatus paymentStatus; // PENDING_PAYMENT, PAID, FAILED, CANCELLED
+    private PaymentStatus paymentStatus;
 
-    private String paymentId; // PayOS orderCode/transaction ID
+    private String paymentId; // PayOS orderCode or transaction ID.
 
     @Column(columnDefinition = "TEXT")
-    private String paymentUrl; // Link thanh toán PayOS
+    private String paymentUrl; // PayOS checkout URL.
 
-    private Instant paidAt; // Thời điểm thanh toán thành công
+    private Instant paidAt; // Time when payment succeeded.
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<OrderItem> orderItems = new HashSet<>();

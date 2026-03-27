@@ -49,10 +49,8 @@ public class TemplateSearchService {
         log.debug("Searching templates: keyword={}, category={}, maxPrice={}, limit={}",
                 keyword, category, maxPrice, limit);
 
-        // Get published templates
         List<Template> allTemplates = templateRepository.findByStatus(TemplateStatus.PUBLISHED);
 
-        // Filter by keyword (title or description)
         if (keyword != null && !keyword.isBlank()) {
             String lowerKeyword = keyword.toLowerCase();
             allTemplates = allTemplates.stream()
@@ -61,7 +59,6 @@ public class TemplateSearchService {
                     .collect(Collectors.toList());
         }
 
-        // Filter by category
         if (category != null && !category.isBlank()) {
             String lowerCategory = category.toLowerCase();
             allTemplates = allTemplates.stream()
@@ -70,24 +67,19 @@ public class TemplateSearchService {
                     .collect(Collectors.toList());
         }
 
-        // Filter by max price
         if (maxPrice != null && maxPrice >= 0) {
             allTemplates = allTemplates.stream()
                     .filter(t -> t.getPrice() != null && t.getPrice() <= maxPrice)
                     .collect(Collectors.toList());
         }
 
-        // Sort by relevance (downloads, rating)
         allTemplates.sort((t1, t2) -> {
-            // Primary: downloads (descending)
             int downloadCompare = Integer.compare(t2.getDownloads(), t1.getDownloads());
             if (downloadCompare != 0) return downloadCompare;
 
-            // Secondary: rating (descending)
             return Float.compare(t2.getRating(), t1.getRating());
         });
 
-        // Limit results
         int resultLimit = (limit != null && limit > 0) ? Math.min(limit, 10) : 5;
         allTemplates = allTemplates.stream()
                 .limit(resultLimit)
@@ -95,7 +87,6 @@ public class TemplateSearchService {
 
         log.info("Found {} templates matching criteria", allTemplates.size());
 
-        // Convert to DTOs
         return allTemplates.stream()
                 .map(this::convertToTemplateCardDTO)
                 .collect(Collectors.toList());
@@ -152,7 +143,6 @@ public class TemplateSearchService {
      * @return TemplateCardDTO
      */
     private TemplateCardDTO convertToTemplateCardDTO(Template template) {
-        // Get first preview image if available
         String previewImage = null;
         if (template.getPreviewImages() != null && !template.getPreviewImages().isEmpty()) {
             previewImage = template.getPreviewImages().get(0);

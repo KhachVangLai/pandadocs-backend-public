@@ -12,10 +12,10 @@ import lombok.Setter;
 @NoArgsConstructor
 public class SellerProfile {
     @Id
-    private Long id; // Dùng chung ID với User
+    private Long id; // Shares the same ID as User.
 
     @OneToOne(fetch = FetchType.LAZY)
-    @MapsId // Đánh dấu rằng trường này là cả Khóa chính và Khóa ngoại
+    @MapsId // Reuses the user ID as both the primary key and foreign key.
     @JoinColumn(name = "id")
     private User user;
 
@@ -24,7 +24,7 @@ public class SellerProfile {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    // Thông tin ngân hàng để admin chuyển tiền (BẮT BUỘC để nhận thanh toán)
+    // Required bank details for seller payouts.
     private String bankName;
 
     private String bankAccountNumber;

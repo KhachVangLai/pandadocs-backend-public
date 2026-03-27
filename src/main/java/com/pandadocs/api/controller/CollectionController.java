@@ -31,8 +31,8 @@ import com.pandadocs.api.security.services.UserDetailsImpl;
 
 import jakarta.persistence.EntityNotFoundException;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
+@CrossOrigin(origins = "*", maxAge = 3600)
 @RequestMapping("/api/collections")
 public class CollectionController {
 
@@ -49,7 +49,6 @@ public class CollectionController {
         return userRepository.findById(userDetails.getId()).get();
     }
 
-    // Lấy tất cả collection của user
     @GetMapping
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public ResponseEntity<List<CollectionDTO>> getUserCollections() {
@@ -61,14 +60,12 @@ public class CollectionController {
             dto.setName(collection.getName());
             dto.setDescription(collection.getDescription());
             dto.setTemplateCount(collection.getTemplates().size());
-            // Map templates
             if (collection.getTemplates() != null) {
                 List<TemplateDTO> templateDtos = collection.getTemplates().stream()
                         .map(template -> {
                             TemplateDTO tdto = new TemplateDTO();
                             tdto.setId(template.getId());
                             tdto.setTitle(template.getTitle());
-                            // Set other template properties as needed
                             return tdto;
                         })
                         .collect(Collectors.toList());
@@ -80,7 +77,6 @@ public class CollectionController {
         return ResponseEntity.ok(dtos);
     }
 
-    // Tạo collection mới
     @PostMapping
     public ResponseEntity<CollectionDTO> createCollection(@RequestBody CollectionDTO collectionRequest) {
         User currentUser = getCurrentUser();
@@ -91,18 +87,16 @@ public class CollectionController {
 
         Collection savedCollection = collectionRepository.save(newCollection);
 
-        // Convert entity to DTO before returning
         CollectionDTO dto = new CollectionDTO();
         dto.setId(savedCollection.getId());
         dto.setName(savedCollection.getName());
         dto.setDescription(savedCollection.getDescription());
-        dto.setTemplateCount(0); // A new collection is always empty
+        dto.setTemplateCount(0);
         dto.setTemplates(new java.util.ArrayList<>());
 
         return ResponseEntity.ok(dto);
     }
 
-    // Thêm template vào collection
     @PostMapping("/{collectionId}/templates")
     public ResponseEntity<?> addTemplateToCollection(@PathVariable Long collectionId,
             @RequestBody AddTemplateRequest request) {
@@ -110,7 +104,6 @@ public class CollectionController {
         Collection collection = collectionRepository.findById(collectionId)
                 .orElseThrow(() -> new EntityNotFoundException("Collection not found"));
 
-        // Đảm bảo user chỉ có thể sửa collection của chính mình
         if (!collection.getUser().getId().equals(currentUser.getId())) {
             return ResponseEntity.status(403)
                     .body(new MessageResponse("Error: You are not authorized to modify this collection."));
@@ -132,7 +125,6 @@ public class CollectionController {
         Collection collection = collectionRepository.findById(collectionId)
                 .orElseThrow(() -> new EntityNotFoundException("Collection not found"));
 
-        // Đảm bảo user chỉ có thể sửa collection của chính mình
         if (!collection.getUser().getId().equals(currentUser.getId())) {
             return ResponseEntity.status(403)
                     .body(new MessageResponse("Error: You are not authorized to modify this collection."));
@@ -141,7 +133,6 @@ public class CollectionController {
         Template templateToRemove = templateRepository.findById(templateId)
                 .orElseThrow(() -> new EntityNotFoundException("Template not found in repository"));
 
-        // Xóa template khỏi danh sách của collection
         boolean removed = collection.getTemplates()
                 .removeIf(template -> template.getId().equals(templateToRemove.getId()));
 
@@ -154,7 +145,6 @@ public class CollectionController {
         }
     }
 
-    // Cập nhật collection
     @PutMapping("/{id}")
     public ResponseEntity<?> updateCollection(@PathVariable Long id, @RequestBody CollectionDTO collectionDetails) {
         User currentUser = getCurrentUser();
@@ -173,8 +163,6 @@ public class CollectionController {
         return ResponseEntity.ok(new MessageResponse("Collection updated successfully!"));
     }
 
-    // --- API MỚI ---
-    // Xóa collection
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCollection(@PathVariable Long id) {
         User currentUser = getCurrentUser();

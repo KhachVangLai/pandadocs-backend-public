@@ -39,7 +39,6 @@ public class Template {
     @Enumerated(EnumType.STRING)
     private TemplateStatus status;
 
-    // ---- CÁC TRƯỜNG MỚI ĐỂ KHỚP VỚI SWAGGER ----
     @ElementCollection
     private List<String> format;
 
@@ -56,12 +55,10 @@ public class Template {
     
     private Instant createdAt;
 
-    private Instant updatedAt; // <-- Thêm trường này
+    private Instant updatedAt;
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "template_images", joinColumns = @JoinColumn(name = "template_id"))
     @Column(name = "image_url")
     private List<String> previewImages;
-    // ------------------------------------------
-
 }

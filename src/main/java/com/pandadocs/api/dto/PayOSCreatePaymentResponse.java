@@ -16,16 +16,16 @@ public class PayOSCreatePaymentResponse {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class PayOSPaymentData {
-        private String bin;           // Mã BIN ngân hàng
-        private String accountNumber; // Số tài khoản
-        private String accountName;   // Tên tài khoản
-        private Integer amount;       // Số tiền
-        private String description;   // Mô tả
-        private Long orderCode;       // Mã đơn hàng
-        private String currency;      // Loại tiền tệ (VND)
-        private String paymentLinkId; // ID payment link
-        private String status;        // Trạng thái: PENDING, PAID, CANCELLED
-        private String checkoutUrl;   // URL để user thanh toán
+        private String bin;           // Bank BIN.
+        private String accountNumber; // Destination account number.
+        private String accountName;   // Destination account name.
+        private Integer amount;       // Payment amount.
+        private String description;   // Payment description.
+        private Long orderCode;       // Order code.
+        private String currency;      // Currency code, typically VND.
+        private String paymentLinkId; // Payment link ID.
+        private String status;        // Payment status: PENDING, PAID, or CANCELLED.
+        private String checkoutUrl;   // URL where the user completes payment.
         private String qrCode;        // QR code (base64)
     }
 }

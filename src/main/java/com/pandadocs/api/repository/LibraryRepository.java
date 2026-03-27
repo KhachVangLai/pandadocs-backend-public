@@ -13,11 +13,10 @@ import com.pandadocs.api.model.User;
 
 @Repository
 public interface LibraryRepository extends JpaRepository<Library, Long> {
-    // Tìm tất cả các library item của một user theo user ID
     List<Library> findByUserId(Long userId);
 
-    // Eager load Template với previewImages (chỉ load 1 @ElementCollection để tránh MultipleBagFetchException)
-    // format và industry sẽ được lazy load trong transaction
+    // Fetch preview images eagerly and keep the other element collections lazy to
+    // avoid MultipleBagFetchException.
     @Query("SELECT DISTINCT l FROM Library l " +
            "LEFT JOIN FETCH l.template t " +
            "LEFT JOIN FETCH t.category " +
@@ -26,11 +25,8 @@ public interface LibraryRepository extends JpaRepository<Library, Long> {
            "WHERE l.user.id = :userId")
     List<Library> findByUserIdWithTemplateDetails(@Param("userId") Long userId);
 
-    // <-- THÊM HÀM NÀY
-    // Kiểm tra xem có tồn tại bản ghi nào khớp với user và template không
     boolean existsByUserAndTemplate(User user, Template template);
 
-    // Xóa tất cả library entries của một template
     @Modifying
     @Transactional
     void deleteByTemplateId(Long templateId);

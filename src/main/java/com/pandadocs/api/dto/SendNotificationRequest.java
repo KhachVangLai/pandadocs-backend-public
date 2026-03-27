@@ -8,6 +8,6 @@ import java.util.List;
 @Setter
 public class SendNotificationRequest {
     private String message;
-    private List<Long> recipientIds; // Danh sách ID của những người nhận
-    private boolean sendToAll = false; // Gửi cho tất cả user nếu true
+    private List<Long> recipientIds; // Recipient user IDs.
+    private boolean sendToAll = false; // Sends to all users when true.
 }

@@ -14,30 +14,11 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class ChatSessionResponse {
-    /**
-     * Session ID
-     */
     private String sessionId;
-
-    /**
-     * Conversation title (auto-generated)
-     */
     private String conversationTitle;
-
-    /**
-     * Number of messages in this session
-     */
     private Integer messageCount;
-
-    /**
-     * When session was created
-     */
     private Instant createdAt;
-
-    /**
-     * List of messages (optional, can be null if not requested)
-     */
-    private List<ChatMessageDTO> messages;
+    private List<ChatMessageDTO> messages; // Optional; present only when requested.
 
     @Getter
     @Setter
@@ -45,7 +26,7 @@ public class ChatSessionResponse {
     @AllArgsConstructor
     @Builder
     public static class ChatMessageDTO {
-        private String role; // USER or ASSISTANT
+        private String role;
         private String content;
         private Instant timestamp;
     }

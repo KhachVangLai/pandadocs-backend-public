@@ -18,10 +18,10 @@ public class TemplateService {
         templateDTO.setDescription(template.getDescription());
         templateDTO.setPrice(template.getPrice());
         templateDTO.setFileUrl(template.getFileUrl());
-        templateDTO.setStatus(template.getStatus());  // Map status
-        templateDTO.setRating(template.getRating()); // Map rating
-        templateDTO.setReviewCount(template.getReviewCount()); // Map reviewCount
-        templateDTO.setPreviewImages(template.getPreviewImages()); // Map preview images
+        templateDTO.setStatus(template.getStatus());
+        templateDTO.setRating(template.getRating());
+        templateDTO.setReviewCount(template.getReviewCount());
+        templateDTO.setPreviewImages(template.getPreviewImages());
 
         if (template.getCategory() != null) {
             CategoryDTO categoryDTO = new CategoryDTO();
